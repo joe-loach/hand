@@ -1,0 +1,22 @@
+[instruction.add]
+name = "Add"
+
+[[instruction.add.variant]]
+title = "ADD, ADDS (immediate)"
+description = """
+Add (immediate) adds an immediate value to a register value, and writes the result to the destination register.
+"""
+syntax = "ADD{S}{<c>} {<Rd>,} <Rn>, #<const>"
+encoding = "[c:4][0 0 1 0][1 0 0][S][Rn:4][Rd:4][const:12]"
+
+[[instruction.add.variant]]
+title = "ADD, ADDS (register)"
+description = """
+Add (register) adds a register value and an optionally-shifted register value, and writes the result to the destination 
+register.
+"""
+syntax = [
+    "ADD{S}{<c>}{<q>} {<Rd>,} <Rn>, <Rm>, RRX",
+    "ADD{S}{<c>}{<q>} {<Rd>,} <Rn>, <Rm> {, <shift> #<amount>}"
+]
+encoding = "[c:4][0 0 0 0][1 0 0][S][Rn:4][Rd:4][amount:5][stype:2][0][Rm:4]"
