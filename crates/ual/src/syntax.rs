@@ -25,6 +25,17 @@ pub enum SyntaxKind {
     /// '-'
     Minus,
 
+    /// Syntax tree root
+    Root,
+    /// Special items enclosed in '< >'
+    Special,
+    /// Optional items enclosed in '{ }'
+    Optional,
+    /// Name identifiers
+    Name,
+    /// Punctuation
+    Punct,
+
     /// An error
     Error,
     /// An unknown character
