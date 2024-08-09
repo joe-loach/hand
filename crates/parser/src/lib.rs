@@ -1,7 +1,9 @@
 use std::{iter::Peekable, rc::Rc};
 
 use lexer::{Lexable, Token as _, TokenStream};
-use rowan::GreenNodeBuilder;
+use rowan::{GreenNodeBuilder, SyntaxNode};
+
+pub use rowan;
 
 pub struct Parser<L>
 where

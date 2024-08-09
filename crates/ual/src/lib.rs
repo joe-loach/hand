@@ -2,6 +2,7 @@ mod lexer;
 mod tree;
 mod syntax;
 
+use parser::rowan;
 use syntax::SyntaxKind;
 
 #[derive(Debug)]
