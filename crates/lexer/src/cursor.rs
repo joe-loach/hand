@@ -1,7 +1,6 @@
 pub struct Cursor<'t> {
-    text: &'t str,
     chars: std::iter::Peekable<std::str::CharIndices<'t>>,
-    pos: usize,
+    last_idx: usize,
 }
 
 impl<'t> Cursor<'t> {
@@ -10,16 +9,14 @@ impl<'t> Cursor<'t> {
         assert!(!text.is_empty());
 
         Cursor {
-            text,
             chars: text.char_indices().peekable(),
-            pos: 0_usize,
+            last_idx: 0_usize,
         }
     }
 
     #[inline]
-    pub(crate) fn finish(self) -> (usize, &'t str) {
-        let pos = self.pos + 1;
-        (pos, &self.text[pos..])
+    pub(crate) fn finish(self) -> usize {
+        self.last_idx + 1
     }
 
     #[inline]
@@ -46,7 +43,7 @@ impl<'t> Cursor<'t> {
         let Some((pos, c)) = self.chars.next() else {
             return None;
         };
-        self.pos = pos;
+        self.last_idx = pos;
         Some((pos, c))
     }
 

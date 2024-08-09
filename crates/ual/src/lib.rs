@@ -1,7 +1,7 @@
 mod lexer;
+mod tree;
 mod syntax;
 
-use common::Language;
 use syntax::SyntaxKind;
 
 #[derive(Debug)]
@@ -9,10 +9,6 @@ pub enum Error {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UAL {}
-
-impl Language for UAL {
-    type Error = Error;
-}
 
 impl rowan::Language for UAL {
     type Kind = SyntaxKind;

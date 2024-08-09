@@ -1,30 +1,45 @@
-use std::ops::Range;
-
-use common::Language;
+use std::{marker::PhantomData, ops::Range, rc::Rc};
 
 mod cursor;
 
 #[derive(Debug)]
-pub struct TokenInfo<L: Language> {
-    pub tok: L::Kind,
+pub struct TokenInfo<T> {
+    pub tok: T,
     pub start: u32,
     pub len: u32,
-    pub error: Option<L::Error>,
 }
 
-impl<L: Language> TokenInfo<L> {
+impl<L> TokenInfo<L> {
     pub fn text_range(&self) -> Range<usize> {
         self.start as usize..(self.start + self.len) as usize
     }
 }
 
-pub fn lex<L: Language>(
-    mut text: &str,
-    next: impl Fn(&mut Lexer<L>, char) -> L::Kind + 'static,
-) -> impl Iterator<Item = TokenInfo<L>> + '_ {
-    let mut pos = 0_usize;
+pub trait Lexable {
+    type Token;
 
-    std::iter::from_fn(move || {
+    fn next(lexer: &mut Lexer, first: char) -> Self::Token;
+}
+
+pub trait Token {
+    /// Is trivial and can be filtered out.
+    fn is_trivia(&self) -> bool;
+    /// Represents whitespace.
+    fn is_whitespace(&self) -> bool;
+}
+
+pub struct TokenStream<T> {
+    text: Rc<str>,
+    pos: usize,
+    _marker: PhantomData<fn() -> T>,
+}
+
+impl<T: Lexable> Iterator for TokenStream<T> {
+    type Item = TokenInfo<T::Token>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let text = &self.text[self.pos..];
+
         if text.is_empty() {
             return None;
         }
@@ -32,41 +47,40 @@ pub fn lex<L: Language>(
         let mut lexer = Lexer::new(text);
         let first = lexer.eat().expect("text is not empty");
 
-        let tok = next(&mut lexer, first);
+        let tok = T::next(&mut lexer, first);
 
-        let (consumed, rest) = lexer.cursor.finish();
+        let consumed = lexer.cursor.finish();
 
-        let start = pos as u32;
-        pos += consumed;
-        text = rest;
+        let start = self.pos as u32;
+        self.pos += consumed;
 
         Some(TokenInfo {
             tok,
             start,
-            len: pos as u32 - start,
-            error: lexer.error,
+            len: self.pos as u32 - start,
         })
-    })
+    }
+}
+
+pub fn lex<L: Lexable>(text: Rc<str>) -> TokenStream<L> {
+    TokenStream {
+        text,
+        pos: 0,
+        _marker: PhantomData,
+    }
 }
 
 /// A streaming [`Lexer`] for a [`Language`].
-pub struct Lexer<'t, L: Language> {
+pub struct Lexer<'t> {
     pub(crate) cursor: cursor::Cursor<'t>,
-    error: Option<L::Error>,
 }
 
-impl<'t, L: Language> Lexer<'t, L> {
+impl<'t> Lexer<'t> {
     #[inline]
     pub(self) fn new(text: &'t str) -> Self {
         Self {
             cursor: cursor::Cursor::new(text),
-            error: None,
         }
-    }
-
-    #[inline]
-    pub fn error(&mut self, err: L::Error) {
-        let _ = self.error.replace(err);
     }
 
     #[inline]

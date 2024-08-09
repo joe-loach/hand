@@ -1,33 +1,43 @@
-use lexer::{Lexer, TokenInfo};
+use lexer::Lexer;
 
 use crate::{SyntaxKind, UAL};
 
-pub fn lex(text: &str) -> impl Iterator<Item = TokenInfo<UAL>> + '_ {
-    lexer::lex::<UAL>(text, token)
+impl lexer::Token for SyntaxKind {
+    fn is_trivia(&self) -> bool {
+        matches!(self, SyntaxKind::Whitespace)
+    }
+
+    fn is_whitespace(&self) -> bool {
+        matches!(self, SyntaxKind::Whitespace)
+    }
 }
 
-fn token(l: &mut Lexer<UAL>, first: char) -> SyntaxKind {
-    match first {
-        c if is_whitespace(c) => {
-            l.eat_while(is_whitespace);
-            SyntaxKind::Whitespace
+impl lexer::Lexable for UAL {
+    type Token = SyntaxKind;
+
+    fn next(l: &mut Lexer, first: char) -> Self::Token {
+        match first {
+            c if is_whitespace(c) => {
+                l.eat_while(is_whitespace);
+                SyntaxKind::Whitespace
+            }
+
+            c if is_ident(c) => {
+                l.eat_while(is_ident_continue);
+                SyntaxKind::Ident
+            }
+
+            '{' => SyntaxKind::OpenCurly,
+            '}' => SyntaxKind::CloseCurly,
+            '<' => SyntaxKind::OpenAngled,
+            '>' => SyntaxKind::CloseAngled,
+            '#' => SyntaxKind::Hash,
+            ',' => SyntaxKind::Comma,
+            '+' => SyntaxKind::Plus,
+            '-' => SyntaxKind::Minus,
+
+            _ => SyntaxKind::Unknown,
         }
-
-        c if is_ident(c) => {
-            l.eat_while(is_ident_continue);
-            SyntaxKind::Ident
-        }
-
-        '{' => SyntaxKind::OpenCurly,
-        '}' => SyntaxKind::CloseCurly,
-        '<' => SyntaxKind::OpenAngled,
-        '>' => SyntaxKind::CloseAngled,
-        '#' => SyntaxKind::Hash,
-        ',' => SyntaxKind::Comma,
-        '+' => SyntaxKind::Plus,
-        '-' => SyntaxKind::Minus,
-
-        _ => SyntaxKind::Unknown,
     }
 }
 
@@ -45,8 +55,11 @@ fn is_whitespace(c: char) -> bool {
 
 #[test]
 fn lexing() {
-    let text = "ADD{S}{<c>} {<Rd>,} <Rn>, #<const>";
-    let toks = lex(text);
+    use std::rc::Rc;
+
+    let text = Rc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let toks = lexer::lex::<UAL>(Rc::clone(&text));
+
     for t in toks {
         print!("{}", &text[t.text_range()]);
     }

@@ -1,25 +1,22 @@
-use std::iter::Peekable;
+use std::{iter::Peekable, rc::Rc};
 
-use common::{Filterable, Language};
-use lexer::TokenInfo;
+use lexer::{Lexable, Token as _, TokenStream};
 use rowan::GreenNodeBuilder;
 
-pub struct Parser<'t, L, I>
+pub struct Parser<L>
 where
-    L: Language,
-    I: Iterator<Item = TokenInfo<L>>,
+    L: rowan::Language + Lexable,
 {
-    text: &'t str,
+    text: Rc<str>,
     builder: GreenNodeBuilder<'static>,
-    tokens: Peekable<I>,
+    tokens: Peekable<TokenStream<L>>,
 }
 
-impl<'t, L, I> Parser<'t, L, I>
+impl<L> Parser<L>
 where
-    L: Language,
-    I: Iterator<Item = TokenInfo<L>>,
+    L: rowan::Language + Lexable,
 {
-    pub fn new(text: &'t str, tokens: I) -> Self {
+    pub fn new(text: Rc<str>, tokens: TokenStream<L>) -> Self {
         Self {
             text,
             builder: GreenNodeBuilder::new(),
@@ -28,12 +25,11 @@ where
     }
 }
 
-impl<'t, L, I> Parser<'t, L, I>
+impl<L> Parser<L>
 where
-    L: Language,
-    I: Iterator<Item = TokenInfo<L>>,
-    <L as rowan::Language>::Kind: Filterable,
-    <L as rowan::Language>::Kind: Into<rowan::SyntaxKind>,
+    L: rowan::Language,
+    L: Lexable<Token = L::Kind>,
+    L::Token: lexer::Token + Into<rowan::SyntaxKind>,
 {
     pub fn peek(&mut self) -> Option<L::Kind> {
         // consume all trivia tokens
@@ -70,10 +66,9 @@ impl Node {
         Node { finished: false }
     }
 
-    pub fn finish<'t, L, I>(mut self, p: &mut Parser<'t, L, I>)
+    pub fn finish<L>(mut self, p: &mut Parser<L>)
     where
-        L: Language,
-        I: Iterator<Item = TokenInfo<L>>,
+        L: rowan::Language + lexer::Lexable,
     {
         self.finished = true;
         p.builder.finish_node()
