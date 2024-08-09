@@ -15,13 +15,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
-name = "common"
-version = "0.1.0"
-dependencies = [
- "rowan",
-]
-
-[[package]]
 name = "config"
 version = "0.1.0"
 dependencies = [
@@ -62,9 +55,6 @@ dependencies = [
 [[package]]
 name = "lexer"
 version = "0.1.0"
-dependencies = [
- "common",
-]
 
 [[package]]
 name = "memchr"
@@ -85,7 +75,6 @@ dependencies = [
 name = "parser"
 version = "0.1.0"
 dependencies = [
- "common",
  "lexer",
  "rowan",
 ]
@@ -220,8 +209,8 @@ dependencies = [
 name = "ual"
 version = "0.1.0"
 dependencies = [
- "common",
  "lexer",
+ "parser",
  "rowan",
 ]
 
