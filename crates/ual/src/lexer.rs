@@ -2,16 +2,6 @@ use lexer::Lexer;
 
 use crate::{SyntaxKind, UAL};
 
-impl lexer::Token for SyntaxKind {
-    fn is_trivia(&self) -> bool {
-        matches!(self, SyntaxKind::Whitespace)
-    }
-
-    fn is_whitespace(&self) -> bool {
-        matches!(self, SyntaxKind::Whitespace)
-    }
-}
-
 impl lexer::Lexable for UAL {
     type Token = SyntaxKind;
 
@@ -38,6 +28,16 @@ impl lexer::Lexable for UAL {
 
             _ => SyntaxKind::Unknown,
         }
+    }
+}
+
+impl lexer::Token for SyntaxKind {
+    fn is_trivia(&self) -> bool {
+        matches!(self, SyntaxKind::Whitespace)
+    }
+
+    fn is_whitespace(&self) -> bool {
+        matches!(self, SyntaxKind::Whitespace)
     }
 }
 
