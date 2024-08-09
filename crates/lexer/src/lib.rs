@@ -1,20 +1,12 @@
 use std::ops::Range;
 
+use common::Language;
+
 mod cursor;
-
-pub trait Language: Sized {
-    /// Tokens produced by the [`Lexer`].
-    type Token;
-    /// Errors produced by the [`Lexer`].
-    type Error;
-
-    /// Parses the next [`Token`](Language::Token) for the [`Language`].
-    fn token(l: &mut Lexer<Self>, first: char) -> Self::Token;
-}
 
 #[derive(Debug)]
 pub struct TokenInfo<L: Language> {
-    pub tok: L::Token,
+    pub tok: L::Kind,
     pub start: u32,
     pub len: u32,
     pub error: Option<L::Error>,
@@ -26,7 +18,10 @@ impl<L: Language> TokenInfo<L> {
     }
 }
 
-pub fn lex<L: Language>(mut text: &str) -> impl Iterator<Item = TokenInfo<L>> + '_ {
+pub fn lex<L: Language>(
+    mut text: &str,
+    next: impl Fn(&mut Lexer<L>, char) -> L::Kind + 'static,
+) -> impl Iterator<Item = TokenInfo<L>> + '_ {
     let mut pos = 0_usize;
 
     std::iter::from_fn(move || {
@@ -37,7 +32,7 @@ pub fn lex<L: Language>(mut text: &str) -> impl Iterator<Item = TokenInfo<L>> + 
         let mut lexer = Lexer::new(text);
         let first = lexer.eat().expect("text is not empty");
 
-        let tok = L::token(&mut lexer, first);
+        let tok = next(&mut lexer, first);
 
         let (consumed, rest) = lexer.cursor.finish();
 

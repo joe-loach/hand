@@ -43,7 +43,9 @@ impl<'t> Cursor<'t> {
     }
 
     fn eat_inner(&mut self) -> Option<(usize, char)> {
-        let Some((pos, c)) = self.chars.next() else { return None };
+        let Some((pos, c)) = self.chars.next() else {
+            return None;
+        };
         self.pos = pos;
         Some((pos, c))
     }
