@@ -57,6 +57,10 @@ where
         self.builder.start_node(kind.into());
         Node::new()
     }
+
+    pub fn finish(self) -> SyntaxNode<L> {
+        SyntaxNode::new_root(self.builder.finish())
+    }
 }
 
 pub struct Node {
