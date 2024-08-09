@@ -1,86 +1,28 @@
-use lexer::{Language, Lexer};
+mod lexer;
+mod syntax;
 
-#[derive(Debug)]
-pub enum Token {
-    /// An identifier
-    Ident,
-    /// Any sequence of whitespace characters
-    Whitespace,
-
-    /// '{'
-    OpenCurly,
-    /// '}'
-    CloseCurly,
-    /// '<'
-    OpenAngled,
-    /// '>'
-    CloseAngled,
-    /// '#'
-    Hash,
-    /// ','
-    Comma,
-    /// '+'
-    Plus,
-    /// '-'
-    Minus,
-
-    /// An unknown character
-    Unknown,
-}
+use common::Language;
+use syntax::SyntaxKind;
 
 #[derive(Debug)]
 pub enum Error {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UAL {}
 
 impl Language for UAL {
-    type Token = crate::Token;
-    type Error = crate::Error;
+    type Error = Error;
+}
 
-    fn token(l: &mut Lexer<UAL>, first: char) -> Token {
-        match first {
-            c if is_whitespace(c) => {
-                l.eat_while(is_whitespace);
-                Token::Whitespace
-            }
+impl rowan::Language for UAL {
+    type Kind = SyntaxKind;
 
-            c if is_ident(c) => {
-                l.eat_while(is_ident_continue);
-                Token::Ident
-            }
-
-            '{' => Token::OpenCurly,
-            '}' => Token::CloseCurly,
-            '<' => Token::OpenAngled,
-            '>' => Token::CloseAngled,
-            '#' => Token::Hash,
-            ',' => Token::Comma,
-            '+' => Token::Plus,
-            '-' => Token::Minus,
-
-            _ => Token::Unknown,
-        }
+    fn kind_from_raw(raw: rowan::SyntaxKind) -> SyntaxKind {
+        assert!(raw.0 <= SyntaxKind::__LAST as u16);
+        unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
     }
-}
 
-fn is_ident(c: char) -> bool {
-    matches!(c, 'a'..='z' | 'A'..='Z')
-}
-
-fn is_ident_continue(c: char) -> bool {
-    matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_')
-}
-
-fn is_whitespace(c: char) -> bool {
-    c.is_whitespace()
-}
-
-#[test]
-fn lexing() {
-    let text = "ADD{S}{<c>} {<Rd>,} <Rn>, #<const>";
-    let toks = lexer::lex::<UAL>(text);
-    for t in toks {
-        print!("{}", &text[t.text_range()]);
+    fn kind_to_raw(kind: SyntaxKind) -> rowan::SyntaxKind {
+        kind.into()
     }
 }
