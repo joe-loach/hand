@@ -1,6 +1,12 @@
-use lexer::Lexer;
+use std::rc::Rc;
+
+use lexer::{Lexer, TokenStream};
 
 use crate::{SyntaxKind, UAL};
+
+pub fn lex(text: Rc<str>) -> TokenStream<UAL> {
+    lexer::lex::<UAL>(text)
+}
 
 impl lexer::Lexable for UAL {
     type Token = SyntaxKind;
