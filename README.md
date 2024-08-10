@@ -12,7 +12,8 @@ Being devoid of multiple encodings and slightly more obscure instructions means 
 ## Todos
 
 - [x] Lexer
-- [ ] Syntax Tree
+- [x] Syntax Tree
+- [ ] Syntax Errors
 - [ ] Intermediate Representations (?)
 - [ ] Encoding
 - [ ] Decoding
