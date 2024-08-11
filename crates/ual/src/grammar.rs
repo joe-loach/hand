@@ -46,13 +46,15 @@ fn special(p: &mut Parser) {
     // <
     p.bump();
     // Name
-    name(p);
-    // >
-    if !p.at(CloseAngled) {
-        error(p);
-    } else {
-        p.bump();
+    while !p.at(CloseAngled){
+        if p.at(Ident) {
+            name(p);
+        } else {
+            error(p);
+        }
     }
+    // >
+    p.bump();
     n.finish(p);
 }
 
