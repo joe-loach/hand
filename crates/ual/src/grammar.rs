@@ -94,10 +94,8 @@ fn name(p: &mut Parser) {
     n.finish(p);
 }
 
-/// Puct(Any)
 fn punct(p: &mut Parser) {
     let n = p.start(Punct);
-    // Any
     p.bump();
     n.finish(p);
 }
