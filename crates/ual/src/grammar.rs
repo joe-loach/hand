@@ -94,8 +94,11 @@ fn name(p: &mut Parser) {
     n.finish(p);
 }
 
+/// Puct(, | #)
 fn punct(p: &mut Parser) {
+    assert!(p.at(Comma) | p.at(Hash));
     let n = p.start(Punct);
+    // , | #
     p.bump();
     n.finish(p);
 }
