@@ -1,5 +1,5 @@
+mod grammar;
 mod lexer;
-mod tree;
 mod syntax;
 
 use parser::rowan;
