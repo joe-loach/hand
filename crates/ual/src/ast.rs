@@ -99,9 +99,9 @@ fn usage() {
             }
             Item::Special(sp) => {
                 if let Some(name) = sp.name() {
-                print!("<");
+                    print!("<");
                     print!("'{}'", name.ident().text());
-                print!(">");
+                    print!(">");
                 }
             }
             Item::Punct(pt) => match pt.kind() {
