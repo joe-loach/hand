@@ -35,8 +35,8 @@ impl Optional {
 }
 
 impl Special {
-    pub fn items(&self) -> impl Iterator<Item = Item> {
-        self.syntax().children().filter_map(Item::cast)
+    pub fn name(&self) -> Name {
+        self.syntax().first_child().and_then(Name::cast).unwrap()
     }
 }
 
@@ -99,9 +99,7 @@ fn usage() {
             }
             Item::Special(sp) => {
                 print!("<");
-                for it in sp.items() {
-                    print_item(it);
-                }
+                print!("'{}'", sp.name().ident().text());
                 print!(">");
             }
             Item::Punct(pt) => match pt.kind() {

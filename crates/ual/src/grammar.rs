@@ -39,20 +39,14 @@ fn item(p: &mut Parser) {
     }
 }
 
-/// < Item(s) >
+/// < Name >
 fn special(p: &mut Parser) {
     assert!(p.at(OpenAngled));
     let n = p.start(Special);
     // <
     p.bump();
-    // Item(s)
-    loop {
-        match p.peek() {
-            Some(CloseAngled) => break,
-            Some(_) => item(p),
-            None => break,
-        }
-    }
+    // Name
+    name(p);
     // >
     if !p.at(CloseAngled) {
         error(p);
