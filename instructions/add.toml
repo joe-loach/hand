@@ -16,7 +16,7 @@ Add (register) adds a register value and an optionally-shifted register value, a
 register.
 """
 syntax = [
-    "ADD{S}{<c>}{<q>} {<Rd>,} <Rn>, <Rm>, RRX",
-    "ADD{S}{<c>}{<q>} {<Rd>,} <Rn>, <Rm> {, <shift> #<amount>}"
+    "ADD{S}{<c>} {<Rd>,} <Rn>, <Rm>, RRX",
+    "ADD{S}{<c>} {<Rd>,} <Rn>, <Rm> {, <shift> #<amount>}"
 ]
 encoding = "[c:4][0 0 0 0][1 0 0][S][Rn:4][Rd:4][amount:5][stype:2][0][Rm:4]"
