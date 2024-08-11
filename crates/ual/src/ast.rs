@@ -35,8 +35,8 @@ impl Optional {
 }
 
 impl Special {
-    pub fn name(&self) -> Name {
-        self.syntax().first_child().and_then(Name::cast).unwrap()
+    pub fn name(&self) -> Option<Name> {
+        self.syntax().children().find_map(Name::cast)
     }
 }
 
@@ -98,9 +98,11 @@ fn usage() {
                 print!("}}");
             }
             Item::Special(sp) => {
+                if let Some(name) = sp.name() {
                 print!("<");
-                print!("'{}'", sp.name().ident().text());
+                    print!("'{}'", name.ident().text());
                 print!(">");
+                }
             }
             Item::Punct(pt) => match pt.kind() {
                 PunctKind::Comma(_) => print!(","),
