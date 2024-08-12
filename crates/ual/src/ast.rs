@@ -1,11 +1,13 @@
 mod node;
 mod token;
+mod validate;
 
 use crate::grammar::{SyntaxNode, SyntaxToken};
 use crate::syntax::SyntaxKind;
 
 pub use node::*;
 pub use token::*;
+pub use validate::validate;
 
 pub trait AstNode: Sized {
     fn castable(kind: SyntaxKind) -> bool;

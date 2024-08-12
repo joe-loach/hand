@@ -14,7 +14,7 @@ Being devoid of multiple encodings and slightly more obscure instructions means 
 - [x] Lexer
 - [x] Syntax Tree
 - [x] Concrete AST
-- [ ] Syntax Errors
+- [x] Syntax Errors
 - [ ] Intermediate Representations (?)
 - [ ] Encoding
 - [ ] Decoding
