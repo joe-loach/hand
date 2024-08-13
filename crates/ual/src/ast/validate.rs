@@ -13,10 +13,6 @@ pub fn validate(root: Root, errors: &mut Vec<SyntaxError>) {
                 is_closed(Braced::Optional(o.clone()), errors);
                 not_nested(o, errors);
             }
-            Item::Error(err) => errors.push(SyntaxError::new(
-                err.syntax().clone(),
-                ErrorKind::UnknownItem,
-            )),
             _ => (),
         }
 
