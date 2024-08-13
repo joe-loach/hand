@@ -28,7 +28,7 @@ impl rowan::Language for UAL {
 fn usage() {
     use ast::AstNode as _;
 
-    let text = std::rc::Rc::<str>::from("ADD{S}{<c>!} {<Rd>,} <Rn>, #<const>");
+    let text = std::rc::Rc::<str>::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
     let tree = crate::grammar::parse(text.clone());
     let root = crate::ast::Root::cast(tree).unwrap();
 
