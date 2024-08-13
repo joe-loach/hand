@@ -46,11 +46,11 @@ fn special(p: &mut Parser) {
     // <
     p.bump();
     // Name
-    while !p.at(CloseAngled){
-        if p.at(Ident) {
-            name(p);
-        } else {
-            error(p);
+    loop {
+        match p.peek() {
+            Some(CloseAngled) | None => break,
+            Some(Ident) => name(p),
+            Some(_) => error(p),
         }
     }
     // >
