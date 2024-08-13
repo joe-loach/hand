@@ -84,7 +84,7 @@ impl Name {
 
 #[test]
 fn usage() {
-    let text = std::rc::Rc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let text = std::sync::Arc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
 
     let root = crate::grammar::parse(text);
     let root = Root::cast(root).unwrap();

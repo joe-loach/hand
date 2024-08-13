@@ -1,4 +1,4 @@
-use std::{iter::Peekable, rc::Rc};
+use std::{iter::Peekable, sync::Arc};
 
 use lexer::{Lexable, Token as _, TokenStream};
 use rowan::{GreenNodeBuilder, SyntaxNode};
@@ -9,7 +9,7 @@ pub struct Parser<L>
 where
     L: rowan::Language + Lexable,
 {
-    text: Rc<str>,
+    text: Arc<str>,
     builder: GreenNodeBuilder<'static>,
     tokens: Peekable<TokenStream<L>>,
 }
@@ -18,7 +18,7 @@ impl<L> Parser<L>
 where
     L: rowan::Language + Lexable,
 {
-    pub fn new(text: Rc<str>, tokens: TokenStream<L>) -> Self {
+    pub fn new(text: Arc<str>, tokens: TokenStream<L>) -> Self {
         Self {
             text,
             builder: GreenNodeBuilder::new(),

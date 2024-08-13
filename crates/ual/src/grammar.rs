@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use parser::rowan;
 
@@ -11,8 +11,8 @@ pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
 
 type Parser = parser::Parser<UAL>;
 
-pub fn parse(text: Rc<str>) -> SyntaxNode {
-    let tokens = crate::lexer::lex(Rc::clone(&text));
+pub fn parse(text: Arc<str>) -> SyntaxNode {
+    let tokens = crate::lexer::lex(Arc::clone(&text));
     let mut parser = Parser::new(text, tokens);
     root(&mut parser);
     parser.finish()
@@ -125,7 +125,7 @@ fn print(indent: usize, element: SyntaxElement) {
 
 #[test]
 fn works() {
-    let text = Rc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let text = Arc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
     let root = parse(text);
     print(0, root.into());
 }

@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ops::Range, rc::Rc};
+use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 mod cursor;
 
@@ -29,7 +29,7 @@ pub trait Token {
 }
 
 pub struct TokenStream<T> {
-    text: Rc<str>,
+    text: Arc<str>,
     pos: usize,
     _marker: PhantomData<fn() -> T>,
 }
@@ -62,7 +62,7 @@ impl<T: Lexable> Iterator for TokenStream<T> {
     }
 }
 
-pub fn lex<L: Lexable>(text: Rc<str>) -> TokenStream<L> {
+pub fn lex<L: Lexable>(text: Arc<str>) -> TokenStream<L> {
     TokenStream {
         text,
         pos: 0,

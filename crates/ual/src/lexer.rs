@@ -1,10 +1,10 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use lexer::{Lexer, TokenStream};
 
 use crate::{SyntaxKind, UAL};
 
-pub fn lex(text: Rc<str>) -> TokenStream<UAL> {
+pub fn lex(text: Arc<str>) -> TokenStream<UAL> {
     lexer::lex::<UAL>(text)
 }
 
@@ -61,10 +61,10 @@ fn is_whitespace(c: char) -> bool {
 
 #[test]
 fn lexing() {
-    use std::rc::Rc;
+    use std::sync::Arc;
 
-    let text = Rc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
-    let toks = lexer::lex::<UAL>(Rc::clone(&text));
+    let text = Arc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let toks = lexer::lex::<UAL>(Arc::clone(&text));
 
     for t in toks {
         print!("{}", &text[t.text_range()]);

@@ -2,8 +2,8 @@ mod ast;
 mod error;
 mod grammar;
 mod lexer;
-mod syntax;
 mod lowering;
+mod syntax;
 
 use parser::rowan;
 use syntax::SyntaxKind;
@@ -28,7 +28,9 @@ impl rowan::Language for UAL {
 fn usage() {
     use ast::AstNode as _;
 
-    let text = std::rc::Rc::<str>::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let src = String::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let text = std::sync::Arc::<str>::from(src.as_str());
+
     let tree = crate::grammar::parse(text.clone());
     let root = crate::ast::Root::cast(tree).unwrap();
 
@@ -37,5 +39,8 @@ fn usage() {
     let frags = lowering::lower(root, None, &mut errors);
 
     println!("{frags:?}");
-    println!("{errors:?}");
+    for err in errors {
+        let err: miette::Error = err.into();
+        println!("{}", err.with_source_code(text.clone()));
+    }
 }
