@@ -1,6 +1,5 @@
-use crate::ast::{Error as AstError, Item, Optional, Root, Special};
+use crate::ast::{Item, Optional, Root, Special};
 use crate::error::{ErrorKind, SyntaxError};
-use crate::syntax::SyntaxKind;
 
 use super::AstNode;
 
@@ -14,18 +13,6 @@ pub fn validate(root: Root, errors: &mut Vec<SyntaxError>) {
                 not_nested(o, errors);
             }
             _ => (),
-        }
-
-        // make sure we catch errors inside of items
-        for err in it.syntax().descendants().filter_map(AstError::cast) {
-            if let Some(t) = err.syntax().first_token() {
-                if t.kind() == SyntaxKind::Unknown {
-                    errors.push(SyntaxError::new(
-                        err.syntax().clone(),
-                        ErrorKind::UnknownCharacter,
-                    ));
-                }
-            }
         }
     }
 }
