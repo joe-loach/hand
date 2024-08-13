@@ -7,3 +7,4 @@ edition = "2021"
 lexer = { path = "../lexer" }
 parser = { path = "../parser" }
 thiserror = "1.0"
+string-interner = "0.17"

@@ -3,6 +3,7 @@ mod error;
 mod grammar;
 mod lexer;
 mod syntax;
+mod lowering;
 
 use parser::rowan;
 use syntax::SyntaxKind;
@@ -27,13 +28,14 @@ impl rowan::Language for UAL {
 fn usage() {
     use ast::AstNode as _;
 
-    let mut errors = Vec::new();
-
-    let text = std::rc::Rc::<str>::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const> <");
+    let text = std::rc::Rc::<str>::from("ADD{S}{<c>!} {<Rd>,} <Rn>, #<const>");
     let tree = crate::grammar::parse(text.clone());
     let root = crate::ast::Root::cast(tree).unwrap();
 
-    crate::ast::validate(root, &mut errors);
+    let mut errors = Vec::new();
+    crate::ast::validate(root.clone(), &mut errors);
+    let frags = lowering::lower(root, None, &mut errors);
 
+    println!("{frags:?}");
     println!("{errors:?}");
 }
