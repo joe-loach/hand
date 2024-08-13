@@ -15,14 +15,14 @@ pub enum ErrorKind {
 }
 
 #[derive(Debug, thiserror::Error)]
-#[error("Parse error")]
-pub struct ParseError {
+#[error("Syntax error")]
+pub struct SyntaxError {
     node: SyntaxNode,
     #[source]
     source: ErrorKind
 }
 
-impl ParseError {
+impl SyntaxError {
     pub fn new(node: SyntaxNode, source: ErrorKind) -> Self {
         Self { node, source }
     }
