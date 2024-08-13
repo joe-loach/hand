@@ -12,6 +12,8 @@ pub enum ErrorKind {
     NoIdent,
     #[error("Optional items cannot be nested")]
     Nesting,
+    #[error("Missing matching brace")]
+    Unclosed,
 }
 
 #[derive(Debug, thiserror::Error)]

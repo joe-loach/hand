@@ -1,16 +1,19 @@
 use crate::ast::{Error as AstError, Item, Optional, Root, Special};
-use crate::error::{ErrorKind, ParseError};
+use crate::error::{ErrorKind, SyntaxError};
 use crate::syntax::SyntaxKind;
 
-use super::{AstNode, AstToken};
+use super::AstNode;
 
 /// Validates a syntax tree from its root.
-pub fn validate(root: Root, errors: &mut Vec<ParseError>) {
+pub fn validate(root: Root, errors: &mut Vec<SyntaxError>) {
     for it in root.items() {
         match it.clone() {
-            Item::Special(s) => special_name(s, errors),
-            Item::Optional(o) => nesting(o, errors),
-            Item::Error(err) => errors.push(ParseError::new(
+            Item::Special(s) => is_closed(Braced::Special(s), errors),
+            Item::Optional(o) => {
+                is_closed(Braced::Optional(o.clone()), errors);
+                not_nested(o, errors);
+            }
+            Item::Error(err) => errors.push(SyntaxError::new(
                 err.syntax().clone(),
                 ErrorKind::UnknownItem,
             )),
@@ -21,7 +24,7 @@ pub fn validate(root: Root, errors: &mut Vec<ParseError>) {
         for err in it.syntax().descendants().filter_map(AstError::cast) {
             if let Some(t) = err.syntax().first_token() {
                 if t.kind() == SyntaxKind::Unknown {
-                    errors.push(ParseError::new(
+                    errors.push(SyntaxError::new(
                         err.syntax().clone(),
                         ErrorKind::UnknownCharacter,
                     ));
@@ -31,37 +34,28 @@ pub fn validate(root: Root, errors: &mut Vec<ParseError>) {
     }
 }
 
-/// Ensure the name inside a Special marker is recognised
-fn special_name(special: Special, errors: &mut Vec<ParseError>) {
-    let Some(name) = special.name() else {
-        errors.push(ParseError::new(
-            special.syntax().clone(),
-            ErrorKind::NoIdent,
-        ));
-        return;
+enum Braced {
+    Special(Special),
+    Optional(Optional),
+}
+
+fn is_closed(braced: Braced, errors: &mut Vec<SyntaxError>) {
+    let has_right_brace = match &braced {
+        Braced::Special(it) => it.right_brace().is_some(),
+        Braced::Optional(it) => it.right_brace().is_some(),
     };
 
-    let id = name.ident();
-    let text = id.text();
-
-    if text.strip_prefix("R").is_some() {
-        // Register <Rd>, <Rn>, ...etc
-        return;
+    if !has_right_brace {
+        let node = match &braced {
+            Braced::Special(it) => it.syntax().clone(),
+            Braced::Optional(it) => it.syntax().clone(),
+        };
+        errors.push(SyntaxError::new(node, ErrorKind::Nesting));
     }
-
-    if ["c", "const", "shift", "amount"].iter().any(|&s| s == text) {
-        // Other special words
-        return;
-    }
-
-    errors.push(ParseError::new(
-        special.syntax().clone(),
-        ErrorKind::UnknownSpecial,
-    ));
 }
 
 /// Ensure that an Optional does not have nested children
-fn nesting(optional: Optional, errors: &mut Vec<ParseError>) {
+fn not_nested(optional: Optional, errors: &mut Vec<SyntaxError>) {
     let has_nested_children = optional
         .syntax()
         .children()
@@ -69,7 +63,7 @@ fn nesting(optional: Optional, errors: &mut Vec<ParseError>) {
         .any(Optional::castable);
 
     if has_nested_children {
-        errors.push(ParseError::new(
+        errors.push(SyntaxError::new(
             optional.syntax().clone(),
             ErrorKind::Nesting,
         ));
