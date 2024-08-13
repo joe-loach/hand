@@ -1,12 +1,14 @@
 mod intern;
 
-use std::str::FromStr;
+use std::{collections::VecDeque, str::FromStr};
 
 pub use intern::Interner;
 
 use crate::{
     ast::{AstNode, AstToken, Item, PunctKind, Root},
     error::{ErrorKind, SyntaxError},
+    grammar::SyntaxNode,
+    syntax::SyntaxKind,
 };
 
 #[derive(Debug)]
@@ -14,8 +16,7 @@ pub enum Fragment {
     Name(intern::Handle),
     Special(Special),
     Byte(u8),
-    BeginOptional,
-    EndOptional,
+    ToggleOptional,
     Whitespace,
 }
 
@@ -50,66 +51,124 @@ pub fn lower(
         &mut Interner::new()
     };
 
-    let mut stream = Vec::new();
+    let mut t = Traversal::new(interner, errors);
 
-    for it in root.items() {
-        if let Err(err) = lower_item(it, &mut stream, interner) {
-            errors.push(err);
+    for el in elements(root.syntax()) {
+        if let Element::Item(Item::Optional(ref o)) = el {
+            t.push(el.clone());
+            for el in elements(o.syntax()) {
+                t.push(el);
+            }
+            t.push(el.clone());
+        } else {
+            t.push(el)
         }
     }
 
-    stream
+    while let Some(it) = t.pop() {
+        t.lower(it);
+    }
+
+    t.finish()
 }
 
-fn lower_item(
-    it: Item,
-    stream: &mut Vec<Fragment>,
-    interner: &mut intern::Interner,
-) -> Result<(), SyntaxError> {
-    match it {
-        Item::Name(name) => {
-            let name = name.ident();
-            let sym = interner.get_or_intern(name.text());
-            stream.push(Fragment::Name(sym));
-        }
-        Item::Optional(opt) => {
-            stream.push(Fragment::BeginOptional);
-            for it in opt.items() {
-                // TODO: collect all errors from inner items
-                // must differentiate inner items to top level ones
-                // on a grammar level
-                lower_item(it, stream, interner)?;
+#[derive(Clone)]
+enum Element {
+    Item(Item),
+    Whitespace,
+}
+
+fn elements(node: &SyntaxNode) -> impl Iterator<Item = Element> {
+    use parser::rowan::NodeOrToken;
+
+    node.children_with_tokens().filter_map(|n| match n {
+        NodeOrToken::Node(n) => Item::cast(n).map(Element::Item),
+        NodeOrToken::Token(t) if t.kind() == SyntaxKind::Whitespace => Some(Element::Whitespace),
+        _ => None,
+    })
+}
+
+struct Traversal<'a, 'b> {
+    stack: VecDeque<Element>,
+    frags: Vec<Fragment>,
+    interner: &'a mut Interner,
+    errors: &'b mut Vec<SyntaxError>,
+}
+
+impl<'a, 'b> Traversal<'a, 'b> {
+    fn lower(&mut self, el: Element) {
+        match el {
+            Element::Item(Item::Name(name)) => {
+                let name = name.ident();
+                let sym = self.interner.get_or_intern(name.text());
+                self.frag(Fragment::Name(sym));
             }
-            stream.push(Fragment::EndOptional);
-        }
-        Item::Special(s) => {
-            let Some(name) = s.name() else {
-                return Err(SyntaxError::new(s.syntax().clone(), ErrorKind::NoIdent));
-            };
 
-            let Ok(kind) = name.ident().text().parse() else {
-                return Err(SyntaxError::new(
-                    name.syntax().clone(),
-                    ErrorKind::UnknownSpecial,
-                ));
-            };
+            // No need to differentiate begin/end optionals,
+            // as they should never nest
+            Element::Item(Item::Optional(_)) => self.frag(Fragment::ToggleOptional),
 
-            stream.push(Fragment::Special(kind));
-        }
-        Item::Punct(p) => stream.push(Fragment::Byte(match p.kind() {
-            PunctKind::Comma(_) => b',',
-            PunctKind::Hash(_) => b'#',
-        })),
+            Element::Item(Item::Special(s)) => {
+                let Some(name) = s.name() else {
+                    self.error(SyntaxError::new(s.syntax().clone(), ErrorKind::NoIdent));
+                    return;
+                };
 
-        Item::Error(err) => {
-            return Err(SyntaxError::new(
+                let Ok(kind) = name.ident().text().parse() else {
+                    self.error(SyntaxError::new(
+                        name.syntax().clone(),
+                        ErrorKind::UnknownSpecial,
+                    ));
+                    return;
+                };
+
+                self.frag(Fragment::Special(kind));
+            }
+
+            Element::Item(Item::Punct(p)) => self.frag(Fragment::Byte(match p.kind() {
+                PunctKind::Comma(_) => b',',
+                PunctKind::Hash(_) => b'#',
+            })),
+
+            Element::Item(Item::Error(err)) => self.error(SyntaxError::new(
                 err.syntax().clone(),
                 ErrorKind::UnknownItem,
-            ))
+            )),
+
+            Element::Whitespace => self.frag(Fragment::Whitespace),
+        }
+    }
+}
+
+impl<'a, 'b> Traversal<'a, 'b> {
+    fn new(interner: &'a mut intern::Interner, errors: &'b mut Vec<SyntaxError>) -> Self {
+        Self {
+            stack: VecDeque::new(),
+            frags: Vec::new(),
+            interner,
+            errors,
         }
     }
 
-    Ok(())
+    fn finish(self) -> Vec<Fragment> {
+        self.frags
+    }
+
+    fn frag(&mut self, frag: Fragment) {
+        self.frags.push(frag);
+    }
+
+    fn error(&mut self, err: SyntaxError) {
+        self.errors.push(err);
+    }
+
+    fn push(&mut self, it: Element) {
+        self.stack.push_back(it);
+    }
+
+    fn pop(&mut self) -> Option<Element> {
+        self.stack.pop_front()
+    }
 }
 
 impl FromStr for Special {
