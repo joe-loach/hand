@@ -54,6 +54,7 @@ impl AstNode for Item {
     }
 }
 
+#[allow(dead_code)]
 impl Special {
     pub fn left_brace(&self) -> Option<super::AngledBrace> {
         self.syntax()
@@ -68,6 +69,7 @@ impl Special {
     }
 }
 
+#[allow(dead_code)]
 impl Optional {
     pub fn left_brace(&self) -> Option<super::CurlyBrace> {
         self.syntax()

@@ -31,6 +31,7 @@ impl Root {
 }
 
 impl Optional {
+    #[allow(dead_code)]
     pub fn items(&self) -> impl Iterator<Item = Item> {
         self.syntax().children().filter_map(Item::cast)
     }
@@ -53,11 +54,13 @@ impl Punct {
     }
 }
 
+#[allow(dead_code)]
 pub enum PunctKind {
     Comma(Comma),
     Hash(Hash),
 }
 
+#[allow(dead_code)]
 impl PunctKind {
     /// Returns `true` if the punctuation is a [`Comma`].
     ///

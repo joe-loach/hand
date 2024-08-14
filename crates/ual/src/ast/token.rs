@@ -12,6 +12,7 @@ macros::token!(pub struct Minus(SyntaxKind::Minus));
 #[repr(transparent)]
 pub struct CurlyBrace(SyntaxToken);
 
+#[allow(dead_code)]
 impl CurlyBrace {
     #[inline]
     #[must_use]
@@ -48,6 +49,7 @@ impl AstToken for CurlyBrace {
 #[repr(transparent)]
 pub struct AngledBrace(SyntaxToken);
 
+#[allow(dead_code)]
 impl AngledBrace {
     #[inline]
     #[must_use]
