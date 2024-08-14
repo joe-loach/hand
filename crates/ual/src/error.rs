@@ -8,14 +8,14 @@ pub enum ErrorKind {
     UnknownSpecial,
     #[error("Unknown Item")]
     UnknownItem,
-    #[error("Unknown Character")]
-    UnknownCharacter,
+    // #[error("Unknown Character")]
+    // UnknownCharacter,
     #[error("Identifier missing")]
     NoIdent,
     #[error("Optional items cannot be nested")]
     Nesting,
     #[error("Missing matching brace")]
-    Unclosed,
+    UnClosed,
 }
 
 #[derive(Debug, thiserror::Error, miette::Diagnostic)]

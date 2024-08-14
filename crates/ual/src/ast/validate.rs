@@ -33,7 +33,7 @@ fn is_closed(braced: Braced, errors: &mut Vec<SyntaxError>) {
             Braced::Special(it) => it.syntax().clone(),
             Braced::Optional(it) => it.syntax().clone(),
         };
-        errors.push(SyntaxError::new(node, ErrorKind::Nesting));
+        errors.push(SyntaxError::new(node, ErrorKind::UnClosed));
     }
 }
 
