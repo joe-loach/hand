@@ -3,12 +3,12 @@ mod intern;
 use std::{collections::VecDeque, str::FromStr};
 
 pub use intern::Interner;
+use lexer::Token;
 
 use crate::{
     ast::{AstNode, AstToken, Item, PunctKind, Root},
     error::{ErrorKind, SyntaxError},
-    grammar::SyntaxNode,
-    syntax::SyntaxKind,
+    grammar::{SyntaxElement, SyntaxNode},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -79,11 +79,9 @@ enum Element {
 }
 
 fn elements(node: &SyntaxNode) -> impl Iterator<Item = Element> {
-    use parser::rowan::NodeOrToken;
-
     node.children_with_tokens().filter_map(|n| match n {
-        NodeOrToken::Node(n) => Item::cast(n).map(Element::Item),
-        NodeOrToken::Token(t) if t.kind() == SyntaxKind::Whitespace => Some(Element::Whitespace),
+        SyntaxElement::Node(n) => Item::cast(n).map(Element::Item),
+        SyntaxElement::Token(t) if t.kind().is_whitespace() => Some(Element::Whitespace),
         _ => None,
     })
 }
