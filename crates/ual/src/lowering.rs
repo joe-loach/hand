@@ -11,7 +11,7 @@ use crate::{
     syntax::SyntaxKind,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Fragment {
     Name(intern::Handle),
     Special(Special),
@@ -20,7 +20,7 @@ pub enum Fragment {
     Whitespace,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Special {
     /// <Rn>
     Register(u8),
