@@ -89,7 +89,7 @@ impl<'t> Lexer<'t> {
     }
 
     #[inline]
-    pub fn eat_while(&mut self, pred: impl Fn(char) -> bool) {
+    pub fn eat_while(&mut self, pred: impl Fn(char) -> bool) -> usize {
         self.cursor.eat_while(pred)
     }
 }

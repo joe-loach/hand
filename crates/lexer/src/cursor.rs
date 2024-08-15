@@ -29,14 +29,19 @@ impl<'t> Cursor<'t> {
         self.peek_inner().map(|(_pos, char)| char)
     }
 
-    pub fn eat_while(&mut self, pred: impl Fn(char) -> bool) {
+    pub fn eat_while(&mut self, pred: impl Fn(char) -> bool) -> usize {
+        let mut consumed = 0_usize;
+        
         while let Some(c) = self.peek() {
             if pred(c) {
+                consumed += 1;
                 self.eat();
             } else {
                 break;
             }
         }
+
+        consumed
     }
 
     fn eat_inner(&mut self) -> Option<(usize, char)> {
