@@ -89,6 +89,11 @@ impl<'t> Lexer<'t> {
     }
 
     #[inline]
+    pub fn peek(&mut self) -> Option<char> {
+        self.cursor.peek()
+    }
+
+    #[inline]
     pub fn eat_while(&mut self, pred: impl Fn(char) -> bool) -> usize {
         self.cursor.eat_while(pred)
     }
