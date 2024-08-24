@@ -3,7 +3,7 @@
 pub enum SyntaxKind {
     Ident,
 
-    Number,
+    Decimal,
     Hex,
     Octal,
     Binary,

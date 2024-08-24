@@ -54,7 +54,7 @@ impl Lexable for HAND {
                 _ => Unknown,
             },
 
-            c if is_number(c) => match (c, lexer.peek()) {
+            c if is_number_start(c) => match (c, lexer.peek()) {
                 ('0', Some('x' | 'X')) => {
                     lexer.eat();
                     lexer.eat_while(|c| matches!(c, '0'..='9' | 'A'..='F' | 'a'..='f' | '_'));
@@ -72,7 +72,7 @@ impl Lexable for HAND {
                 }
                 _ => {
                     lexer.eat_while(|c| matches!(c, '0'..='9' | '_'));
-                    Number
+                    Decimal
                 }
             },
 
@@ -93,7 +93,7 @@ impl Lexable for HAND {
     }
 }
 
-fn is_number(c: char) -> bool {
+fn is_number_start(c: char) -> bool {
     matches!(c, '0'..='9')
 }
 

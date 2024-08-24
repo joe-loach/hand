@@ -43,8 +43,8 @@ fn chars() {
 
 #[test]
 fn numbers() {
-    assert_eq!(&tokens(r"0"), &[Number]);
-    assert_eq!(&tokens(r"1 9"), &[Number, Whitespace, Number]);
+    assert_eq!(&tokens(r"0"), &[Decimal]);
+    assert_eq!(&tokens(r"1 9"), &[Decimal, Whitespace, Decimal]);
     assert_eq!(&tokens(r"0b01010"), &[Binary]);
     assert_eq!(&tokens(r"0o7610"), &[Octal]);
     assert_eq!(&tokens(r"0xFACE"), &[Hex]);
