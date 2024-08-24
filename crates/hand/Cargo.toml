@@ -1,0 +1,8 @@
+[package]
+name = "hand"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lexer = { path = "../lexer" }
+ual = { path = "../ual" }
