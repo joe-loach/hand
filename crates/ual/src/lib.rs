@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use ast::AstNode as _;
 use error::SyntaxError;
+use intern::Interner;
 use lowering::Fragment;
 use parser::rowan;
 use syntax::SyntaxKind;
@@ -17,14 +18,15 @@ use syntax::SyntaxKind;
 pub enum UAL {}
 
 impl UAL {
-    pub fn parse(text: Arc<str>) -> Result<Pattern, Errors> {
+    pub fn parse(text: Arc<str>, interner: Option<&mut Interner>) -> Result<Pattern, Errors> {
         let tree = crate::grammar::parse(text.clone());
         let root = crate::ast::Root::cast(tree).expect("grammar starts at root");
 
         let mut errors = Vec::new();
         crate::ast::validate(root.clone(), &mut errors);
-        let frags = lowering::lower(root, None, &mut errors);
-        
+
+        let frags = lowering::lower(root, interner, &mut errors);
+
         if !errors.is_empty() {
             return Err(Errors { inner: errors });
         }

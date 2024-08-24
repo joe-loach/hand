@@ -1,8 +1,6 @@
-mod intern;
-
 use std::{collections::VecDeque, str::FromStr};
 
-pub use intern::Interner;
+use intern::Interner;
 use lexer::Token;
 
 use crate::{

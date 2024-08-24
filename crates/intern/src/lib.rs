@@ -1,4 +1,6 @@
-use string_interner::{backend::StringBackend, StringInterner, Symbol};
+use string_interner::{backend::StringBackend, StringInterner};
+
+pub use string_interner::Symbol;
 
 use std::num::NonZeroU16;
 

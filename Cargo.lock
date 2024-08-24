@@ -74,6 +74,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "intern"
+version = "0.1.0"
+dependencies = [
+ "string-interner",
+]
+
+[[package]]
 name = "lexer"
 version = "0.1.0"
 
@@ -290,10 +297,10 @@ dependencies = [
 name = "ual"
 version = "0.1.0"
 dependencies = [
+ "intern",
  "lexer",
  "miette",
  "parser",
- "string-interner",
  "thiserror",
 ]
 
