@@ -1,6 +1,5 @@
 use std::{collections::VecDeque, str::FromStr};
 
-use intern::Interner;
 use lexer::Token;
 
 use crate::{
@@ -11,11 +10,10 @@ use crate::{
 
 #[derive(Debug, Clone, Copy)]
 pub enum Fragment {
-    Name(intern::Handle),
+    IdRange(u32),
     Special(Special),
     Byte(u8),
     ToggleOptional,
-    Whitespace,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -38,18 +36,8 @@ pub enum Special {
     Immediate,
 }
 
-pub fn lower(
-    root: Root,
-    interner: Option<&mut Interner>,
-    errors: &mut Vec<SyntaxError>,
-) -> Vec<Fragment> {
-    let interner = if let Some(it) = interner {
-        it
-    } else {
-        &mut Interner::new()
-    };
-
-    let mut t = Traversal::new(interner, errors);
+pub fn lower(root: Root, errors: &mut Vec<SyntaxError>) -> Vec<Fragment> {
+    let mut t = Traversal::new(errors);
 
     for el in elements(root.syntax()) {
         if let Element::Item(Item::Optional(ref o)) = el {
@@ -84,20 +72,21 @@ fn elements(node: &SyntaxNode) -> impl Iterator<Item = Element> {
     })
 }
 
-struct Traversal<'a, 'b> {
+struct Traversal<'a> {
     stack: VecDeque<Element>,
     frags: Vec<Fragment>,
-    interner: &'a mut Interner,
-    errors: &'b mut Vec<SyntaxError>,
+    errors: &'a mut Vec<SyntaxError>,
 }
 
-impl<'a, 'b> Traversal<'a, 'b> {
+impl<'a> Traversal<'a> {
     fn lower(&mut self, el: Element) {
         match el {
             Element::Item(Item::Name(name)) => {
-                let name = name.ident();
-                let sym = self.interner.get_or_intern(name.text());
-                self.frag(Fragment::Name(sym));
+                let range = name.ident().syntax().text_range();
+                // start of ident
+                self.frag(Fragment::IdRange(range.start().into()));
+                // end of ident
+                self.frag(Fragment::IdRange(range.end().into()));
             }
 
             // No need to differentiate begin/end optionals,
@@ -131,17 +120,16 @@ impl<'a, 'b> Traversal<'a, 'b> {
                 ErrorKind::UnknownItem,
             )),
 
-            Element::Whitespace => self.frag(Fragment::Whitespace),
+            Element::Whitespace => self.frag(Fragment::Byte(b'\0')),
         }
     }
 }
 
-impl<'a, 'b> Traversal<'a, 'b> {
-    fn new(interner: &'a mut intern::Interner, errors: &'b mut Vec<SyntaxError>) -> Self {
+impl<'a> Traversal<'a> {
+    fn new(errors: &'a mut Vec<SyntaxError>) -> Self {
         Self {
             stack: VecDeque::new(),
             frags: Vec::new(),
-            interner,
             errors,
         }
     }
