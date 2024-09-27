@@ -48,7 +48,7 @@ impl lexer::Token for SyntaxKind {
 }
 
 fn is_ident(c: char) -> bool {
-    matches!(c, 'a'..='z' | 'A'..='Z')
+    c.is_ascii_alphabetic()
 }
 
 fn is_ident_continue(c: char) -> bool {

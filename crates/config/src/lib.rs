@@ -41,7 +41,7 @@ impl InstMap {
     }
 
     pub(crate) fn merge(&mut self, other: InstMap) {
-        self.instruction.extend(other.instruction.into_iter());
+        self.instruction.extend(other.instruction);
     }
 }
 

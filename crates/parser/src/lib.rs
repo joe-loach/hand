@@ -63,13 +63,14 @@ where
     }
 }
 
+#[derive(Default)]
 pub struct Node {
     finished: bool,
 }
 
 impl Node {
     pub fn new() -> Self {
-        Node { finished: false }
+        Self::default()
     }
 
     pub fn finish<L>(mut self, p: &mut Parser<L>)
