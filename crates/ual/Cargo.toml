@@ -6,6 +6,5 @@ edition = "2021"
 [dependencies]
 lexer = { path = "../lexer" }
 parser = { path = "../parser" }
-intern = { path = "../intern" }
 thiserror = "1.0"
 miette = "7.2"
