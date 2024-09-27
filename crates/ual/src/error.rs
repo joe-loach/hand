@@ -1,8 +1,30 @@
+use std::sync::Arc;
+
 use miette::SourceSpan;
+use miette::Diagnostic;
+use thiserror::Error;
 
 use crate::grammar::SyntaxNode;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Error, Diagnostic)]
+#[error("UAL Errors")]
+#[diagnostic()]
+pub struct Errors {
+    #[source_code]
+    pub(crate) src: Arc<str>,
+    #[related]
+    pub(crate) inner: Vec<SyntaxError>,
+}
+
+impl Errors {
+    #[inline]
+    pub fn all(&self) -> &[SyntaxError] {
+        &self.inner
+    }
+}
+
+#[derive(Debug, Clone, Error, Diagnostic)]
+#[diagnostic()]
 pub enum ErrorKind {
     #[error("Unknown special item")]
     UnknownSpecial,
@@ -18,7 +40,7 @@ pub enum ErrorKind {
     UnClosed,
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[derive(Debug, Clone, Error, Diagnostic)]
 #[error("Syntax error")]
 #[diagnostic()]
 pub struct SyntaxError {
