@@ -94,7 +94,7 @@ impl Lexable for HAND {
 }
 
 fn is_number_start(c: char) -> bool {
-    matches!(c, '0'..='9')
+    c.is_ascii_digit()
 }
 
 fn is_whitespace(c: char) -> bool {
