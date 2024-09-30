@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+use parser::rowan;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 pub enum SyntaxKind {
     Ident,
@@ -20,9 +22,26 @@ pub enum SyntaxKind {
     Colon,
     Equals,
 
+    Root,
+    Statement,
+    Instruction,
+    Arguments,
+    Label,
     Register,
+    Number,
+    Name,
+    Error,
 
+    NewLine,
     Whitespace,
     Comment,
     Unknown,
+
+    __LAST,
+}
+
+impl From<SyntaxKind> for rowan::SyntaxKind {
+    fn from(kind: SyntaxKind) -> Self {
+        Self(kind as u16)
+    }
 }

@@ -16,8 +16,10 @@ impl Lexable for HAND {
         use SyntaxKind::*;
 
         match first {
+            '\n' => NewLine,
+
             c if is_whitespace(c) => {
-                lexer.eat_while(is_whitespace);
+                lexer.eat_while(is_whitespace_cons);
                 Whitespace
             }
 
@@ -93,12 +95,27 @@ impl Lexable for HAND {
     }
 }
 
+impl lexer::Token for SyntaxKind {
+    fn is_trivia(&self) -> bool {
+        matches!(self, SyntaxKind::Whitespace | SyntaxKind::Comment)
+    }
+
+    fn is_whitespace(&self) -> bool {
+        matches!(self, SyntaxKind::Whitespace)
+    }
+}
+
 fn is_number_start(c: char) -> bool {
     c.is_ascii_digit()
 }
 
 fn is_whitespace(c: char) -> bool {
     c.is_ascii_whitespace()
+}
+
+fn is_whitespace_cons(c: char) -> bool {
+    // everything BUT newline
+    matches!(c, '\t' | '\x0C' | '\r' | ' ')
 }
 
 fn is_ident(c: char) -> bool {

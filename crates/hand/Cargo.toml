@@ -5,5 +5,6 @@ edition = "2021"
 
 [dependencies]
 lexer = { path = "../lexer" }
+parser = { path = "../parser" }
 ual = { path = "../ual" }
 ual-derive = { path = "../ual-derive" }
