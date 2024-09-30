@@ -1,7 +1,7 @@
 use std::{iter::Peekable, sync::Arc};
 
 use lexer::{Lexable, Token as _, TokenStream};
-use rowan::{GreenNodeBuilder, SyntaxNode};
+use rowan::{Checkpoint, GreenNodeBuilder, SyntaxNode};
 
 pub use rowan;
 
@@ -56,6 +56,15 @@ where
     pub fn start(&mut self, kind: L::Kind) -> Node {
         self.builder.start_node(kind.into());
         Node::new()
+    }
+
+    pub fn start_at(&mut self, cp: Checkpoint, kind: L::Kind) -> Node {
+        self.builder.start_node_at(cp, kind.into());
+        Node::new()
+    }
+
+    pub fn checkpoint(&self) -> Checkpoint {
+        self.builder.checkpoint()
     }
 
     pub fn finish(self) -> SyntaxNode<L> {
