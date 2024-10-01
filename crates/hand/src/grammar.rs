@@ -54,13 +54,8 @@ fn statement(p: &mut Parser) {
     // label?
     let label = label(p);
 
-    let im = match label {
-        Ok(()) => p.start(),
-        Err(m) => m,
-    };
-
     // instr?
-    instruction(p, im);
+    instruction(p, label.err());
 
     // \n
     if !p.eat(NewLine) {
@@ -70,8 +65,14 @@ fn statement(p: &mut Parser) {
     m.finish(p, Statement);
 }
 
-/// (name) arguments
-fn instruction(p: &mut Parser, m: Marker) {
+/// name arguments
+fn instruction(p: &mut Parser, name: Option<Marker>) {
+    let m = name.unwrap_or_else(|| {
+        // has a label, get the name
+        let m = p.start();
+        self::name(p);
+        m
+    });
     arguments(p);
     m.finish(p, Instruction);
 }
