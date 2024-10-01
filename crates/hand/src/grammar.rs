@@ -27,7 +27,8 @@ fn it_works() {
                 ADR r1, loop \n\
                 BEQ loop \n\
                 LDR r2, [r3, r4, LSL #2]! \n\
-                STMDB SP!, {R0-R4, SP}";
+                STMDB SP!, {R0-R4, SP} \n\n\
+                SUBEQ r0, r1, #5";
     let text = Arc::<str>::from(text);
     dbg!(parse(text));
 }
@@ -37,6 +38,11 @@ fn root(p: &mut Parser) {
     let m = p.start();
     while p.peek().is_some() {
         statement(p);
+
+        // clean up empty lines
+        while let Some(NewLine) = p.peek() {
+            p.bump(NewLine);
+        }
     }
     m.finish(p, Root);
 }
