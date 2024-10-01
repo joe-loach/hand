@@ -45,17 +45,12 @@ fn root(p: &mut Parser) {
 fn statement(p: &mut Parser) {
     let m = p.start();
 
-    let start = p.start();
-
     // label?
     let label = label(p);
 
     let im = match label {
-        Ok(()) => start,
-        Err(m) => {
-            start.abandon();
-            m
-        }
+        Ok(()) => p.start(),
+        Err(m) => m,
     };
 
     // instr?
