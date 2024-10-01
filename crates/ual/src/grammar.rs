@@ -20,11 +20,11 @@ pub fn parse(text: Arc<str>) -> SyntaxNode {
 
 /// Root(Item(s))
 fn root(p: &mut Parser) {
-    let n = p.start(Root);
+    let m = p.start();
     while p.peek().is_some() {
         item(p);
     }
-    n.finish(p);
+    m.finish(p, Root);
 }
 
 fn item(p: &mut Parser) {
@@ -42,28 +42,30 @@ fn item(p: &mut Parser) {
 /// < Name >
 fn special(p: &mut Parser) {
     assert!(p.at(OpenAngled));
-    let n = p.start(Special);
+    let m = p.start();
     // <
-    p.bump();
+    p.bump(OpenAngled);
     // Name
-    loop {
-        match p.peek() {
-            Some(CloseAngled) | None => break,
-            Some(Ident) => name(p),
-            Some(_) => error(p),
+    while let Some(kind) = p.peek() {
+        match kind {
+            CloseAngled => break,
+            Ident => name(p),
+            _ => error(p),
         }
     }
     // >
-    p.bump();
-    n.finish(p);
+    if !p.eat(CloseAngled) {
+        error(p);
+    }
+    m.finish(p, Special);
 }
 
 /// { Item(s) }
 fn optional(p: &mut Parser) {
     assert!(p.at(OpenCurly));
-    let n = p.start(Optional);
+    let m = p.start();
     // {
-    p.bump();
+    p.bump(OpenCurly);
     // Item(s)
     loop {
         match p.peek() {
@@ -73,38 +75,36 @@ fn optional(p: &mut Parser) {
         }
     }
     // }
-    if !p.at(CloseCurly) {
+    if !p.eat(CloseCurly) {
         error(p);
-    } else {
-        p.bump();
     }
-    n.finish(p);
+    m.finish(p, Optional);
 }
 
 /// Name(Ident)
 fn name(p: &mut Parser) {
     assert!(p.at(Ident));
-    let n = p.start(Name);
+    let m = p.start();
     // Ident
-    p.bump();
-    n.finish(p);
+    p.bump(Ident);
+    m.finish(p, Name);
 }
 
 /// Puct(, | #)
 fn punct(p: &mut Parser) {
     assert!(p.at(Comma) | p.at(Hash));
-    let n = p.start(Punct);
+    let m = p.start();
     // , | #
-    p.bump();
-    n.finish(p);
+    p.bump_any();
+    m.finish(p, Punct);
 }
 
 /// Error(Any)
 fn error(p: &mut Parser) {
-    let n = p.start(Error);
+    let n = p.start();
     // Any
-    p.bump();
-    n.finish(p);
+    p.bump_any();
+    n.finish(p, Error);
 }
 
 #[cfg(test)]
