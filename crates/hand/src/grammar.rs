@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use parser::rowan::{self, Checkpoint};
+use parser::{rowan, Marker};
 
-use crate::HAND;
+use crate::{syntax::SyntaxKind, HAND};
 
 pub type SyntaxNode = rowan::SyntaxNode<HAND>;
 pub type SyntaxToken = rowan::SyntaxToken<HAND>;
@@ -21,111 +21,191 @@ pub fn parse(text: Arc<str>) -> SyntaxNode {
 
 #[test]
 fn it_works() {
-    let text = "loop: ADD r0, r1, #1\n SUB r0, r0, r1";
+    let text = "loop: ADD r0, r1, #1 \n\
+                SUB r0, r0, r1 \n\
+                CMP r0, r1, #1 \n\
+                ADR r1, loop \n\
+                BEQ loop \n\
+                LDR r2, [r3, r4, LSL #2]! \n\
+                STMDB SP!, {R0-R4, SP}";
     let text = Arc::<str>::from(text);
     dbg!(parse(text));
 }
 
 /// statement(s)
 fn root(p: &mut Parser) {
-    let n = p.start(Root);
+    let m = p.start();
     while p.peek().is_some() {
         statement(p);
     }
-    n.finish(p);
+    m.finish(p, Root);
 }
 
-/// label \n
-///
-/// label? instr \n
+/// label? instr? \n
 fn statement(p: &mut Parser) {
-    let n = p.start(Statement);
+    let m = p.start();
 
-    if !p.at(Ident) {
+    let start = p.start();
+
+    // label?
+    let label = label(p);
+
+    let im = match label {
+        Ok(()) => start,
+        Err(m) => {
+            start.abandon();
+            m
+        }
+    };
+
+    // instr?
+    instruction(p, im);
+
+    // \n
+    if !p.eat(NewLine) {
         unexpected(p);
-        n.finish(p);
-        return;
     }
 
-    let start = p.checkpoint();
-    let label = label(p, start);
-
-    let cp = label.unwrap_or(start);
-
-    instruction(p, cp);
-
-    if !matches!(p.peek(), Some(NewLine) | None) {
-        unexpected(p);
-    } else {
-        p.bump();
-    }
-    n.finish(p);
+    m.finish(p, Statement);
 }
 
 /// (name) arguments
-fn instruction(p: &mut Parser, name: Checkpoint) {
-    let n = p.start_at(name, Instruction);
+fn instruction(p: &mut Parser, m: Marker) {
     arguments(p);
-    n.finish(p);
+    m.finish(p, Instruction);
 }
 
-/// name | register | number | comma
+/// item(s)
 fn arguments(p: &mut Parser) {
-    let n = p.start(Arguments);
-
+    let m = p.start();
     while let Some(kind) = p.peek() {
-        match kind {
-            NewLine => break,
-            Ident => name(p),
-            Hash => number(p),
-            _ => p.bump(),
+        if kind == NewLine {
+            break;
         }
+        item(p);
     }
+    m.finish(p, Arguments);
+}
 
-    n.finish(p);
+fn item(p: &mut Parser) {
+    let m = p.start();
+    match p.peek() {
+        Some(Ident) => name(p),
+        Some(Hash) => number(p),
+        Some(Comma) => punct(p),
+        Some(OpenSquare) => address(p),
+        Some(OpenCurly) => register_list(p),
+        _ => unexpected(p),
+    }
+    m.finish(p, Item);
+}
+
+/// { (ident | comma) (s) }
+fn register_list(p: &mut Parser) {
+    assert!(p.at(OpenCurly));
+    let m = p.start();
+    // {
+    p.bump(OpenCurly);
+    // (ident | comma) (s)
+    while let Some(kind) = p.peek() {
+        if kind == CloseCurly {
+            break;
+        }
+        let m = p.start();
+        match kind {
+            Ident => name(p),
+            Comma | Minus => punct(p),
+            _ => unexpected(p),
+        }
+        m.finish(p, Item);
+    }
+    // }
+    expect(p, CloseCurly);
+    m.finish(p, RegisterList);
+}
+
+/// [ item(s) ](!)?
+fn address(p: &mut Parser) {
+    assert!(p.at(OpenSquare));
+    let m = p.start();
+    // [
+    p.bump(OpenSquare);
+    // item(s)
+    while let Some(kind) = p.peek() {
+        if kind == CloseSquare {
+            break;
+        }
+        item(p);
+    }
+    // ]
+    expect(p, CloseSquare);
+    // (!)?
+    if p.at(Bang) {
+        punct(p);
+    }
+    m.finish(p, Address);
 }
 
 /// name:
-fn label(p: &mut Parser, cp: Checkpoint) -> Option<Checkpoint> {
+fn label(p: &mut Parser) -> Result<(), Marker> {
     assert!(p.at(Ident));
+    let m = p.start();
     name(p);
-    if !p.at(Colon) {
-        Some(cp)
+    if p.eat(Colon) {
+        m.finish(p, Label);
+        Ok(())
     } else {
-        let n = p.start_at(cp, Label);
-        p.bump();
-        n.finish(p);
-        None
+        Err(m)
     }
 }
 
 /// #(Decimal | Hex | Octal | Binary)
 fn number(p: &mut Parser) {
     assert!(p.at(Hash));
-    let n = p.start(Number);
-    p.bump();
+    let m = p.start();
+    // #
+    p.bump(Hash);
     match p.peek() {
-        Some(Decimal | Hex | Octal | Binary) => p.bump(),
+        Some(num @ (Decimal | Hex | Octal | Binary)) => p.bump(num),
         _ => unexpected(p),
     }
-    n.finish(p);
+    m.finish(p, Number);
 }
 
-/// ident
+/// Ident
 fn name(p: &mut Parser) {
-    if p.at(Ident) {
-        let n = p.start(Name);
-        p.bump();
-        n.finish(p);
+    let m = p.start();
+    if p.eat(Ident) {
+        m.finish(p, Name);
     } else {
-        let n = p.start(Error);
-        n.finish(p);
+        m.finish(p, Error);
     }
 }
 
+/// Comma | Bang | Minus | Plus
+fn punct(p: &mut Parser) {
+    assert!(matches!(p.peek(), Some(Comma | Bang | Minus | Plus)));
+    let m = p.start();
+    p.bump_any();
+    m.finish(p, Punct);
+}
+
+/// Expect a `kind`, emit an Error otherwise
+fn expect(p: &mut Parser, kind: SyntaxKind) -> bool {
+    if !p.eat(kind) {
+        p.emit(Error);
+        false
+    } else {
+        true
+    }
+}
+
+/// Any
 fn unexpected(p: &mut Parser) {
-    let n = p.start(Error);
-    // Any
-    p.bump();
-    n.finish(p);
+    if !p.at_end() {
+        let m = p.start();
+        // Any
+        p.bump_any();
+        m.finish(p, Error);
+    }
 }

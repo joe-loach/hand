@@ -114,6 +114,7 @@ name = "hand"
 version = "0.1.0"
 dependencies = [
  "lexer",
+ "parser",
  "ual",
  "ual-derive",
 ]
