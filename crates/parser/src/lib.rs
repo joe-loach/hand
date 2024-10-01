@@ -33,65 +33,96 @@ where
     L: Lexable<Token = L::Kind>,
     L::Token: lexer::Token + Into<rowan::SyntaxKind>,
 {
-    pub fn peek(&mut self) -> Option<L::Kind> {
-        // consume all trivia tokens
-        while self.tokens.peek().is_some_and(|t| t.tok.is_trivia()) {
-            self.bump();
-        }
+    pub fn at_end(&mut self) -> bool {
+        self.peek().is_none()
+    }
 
+    pub fn peek(&mut self) -> Option<L::Kind> {
+        self.skip_trivia();
         self.tokens.peek().map(|t| t.tok)
     }
 
-    pub fn bump(&mut self) {
-        if let Some(info) = self.tokens.next() {
-            self.builder
-                .token(info.tok.into(), &self.text[info.text_range()]);
+    pub fn bump(&mut self, kind: L::Kind) {
+        debug_assert!(self.at(kind));
+        self.bump_inner();
+    }
+
+    pub fn bump_any(&mut self) {
+        self.bump_inner();
+    }
+
+    pub fn at(&mut self, kind: L::Kind) -> bool {
+        self.peek().is_some_and(|peek| peek == kind)
+    }
+
+    pub fn eat(&mut self, kind: L::Kind) -> bool {
+        if self.at(kind) {
+            self.bump(kind);
+            true
+        } else {
+            false
         }
     }
 
-    pub fn at(&mut self, expected: L::Kind) -> bool {
-        self.peek().is_some_and(|kind| kind == expected)
+    pub fn start(&mut self) -> Marker {
+        Marker::new(self.checkpoint())
     }
 
-    pub fn start(&mut self, kind: L::Kind) -> Node {
-        self.builder.start_node(kind.into());
-        Node::new()
-    }
-
-    pub fn start_at(&mut self, cp: Checkpoint, kind: L::Kind) -> Node {
-        self.builder.start_node_at(cp, kind.into());
-        Node::new()
-    }
-
-    pub fn checkpoint(&self) -> Checkpoint {
-        self.builder.checkpoint()
+    pub fn emit(&mut self, kind: L::Kind) {
+        Marker::new(self.checkpoint()).finish(self, kind);
     }
 
     pub fn finish(self) -> SyntaxNode<L> {
         SyntaxNode::new_root(self.builder.finish())
     }
+
+    fn checkpoint(&self) -> Checkpoint {
+        self.builder.checkpoint()
+    }
+
+    fn skip_trivia(&mut self) {
+        while self.tokens.peek().is_some_and(|t| t.tok.is_trivia()) {
+            self.bump_inner();
+        }
+    }
+
+    fn bump_inner(&mut self) {
+        if let Some(info) = self.tokens.next() {
+            self.builder
+                .token(info.tok.into(), &self.text[info.text_range()]);
+        }
+    }
 }
 
-#[derive(Default)]
-pub struct Node {
+pub struct Marker {
+    checkpoint: Checkpoint,
     finished: bool,
 }
 
-impl Node {
-    pub fn new() -> Self {
-        Self::default()
+impl Marker {
+    fn new(checkpoint: Checkpoint) -> Self {
+        Self {
+            checkpoint,
+            finished: false,
+        }
     }
 
-    pub fn finish<L>(mut self, p: &mut Parser<L>)
+    pub fn finish<L>(mut self, p: &mut Parser<L>, kind: L::Kind)
     where
         L: rowan::Language + lexer::Lexable,
+        L::Kind: Into<rowan::SyntaxKind>,
     {
         self.finished = true;
+        p.builder.start_node_at(self.checkpoint, kind.into());
         p.builder.finish_node()
+    }
+
+    pub fn abandon(mut self) {
+        self.finished = true;
     }
 }
 
-impl Drop for Node {
+impl Drop for Marker {
     fn drop(&mut self) {
         if !self.finished {
             panic!("Marker not finished!")
