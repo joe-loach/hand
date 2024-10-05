@@ -1,6 +1,7 @@
 mod grammar;
 mod lexer;
 mod syntax;
+mod ast;
 
 use std::sync::Arc;
 
