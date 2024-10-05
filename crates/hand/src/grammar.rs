@@ -28,7 +28,8 @@ fn it_works() {
                 BEQ loop \n\
                 LDR r2, [r3, r4, LSL #2]! \n\
                 STMDB SP!, {R0-R4, SP} \n\n\
-                SUBEQ r0, r1, #5";
+                SUBEQ r0, r1, #5\n\
+                HLT";
     let text = Arc::<str>::from(text);
     dbg!(parse(text));
 }
@@ -177,11 +178,8 @@ fn number(p: &mut Parser) {
 /// Ident
 fn name(p: &mut Parser) {
     let m = p.start();
-    if p.eat(Ident) {
-        m.finish(p, Name);
-    } else {
-        m.finish(p, Error);
-    }
+    p.eat(Ident);
+    m.finish(p, Name);
 }
 
 /// Comma | Bang | Minus | Plus
