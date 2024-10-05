@@ -14,6 +14,10 @@ use lowering::Fragment;
 use parser::rowan;
 use syntax::SyntaxKind;
 
+pub trait UalSyntax {
+    const PATTERN: Pattern<'_>;
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UAL {}
 
