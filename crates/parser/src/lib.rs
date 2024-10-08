@@ -1,6 +1,6 @@
 use std::{iter::Peekable, sync::Arc};
 
-use lexer::{Lexable, Token as _, TokenStream};
+use lexer::{Lexable, Token as _, TokenInfo, TokenStream};
 use rowan::{Checkpoint, GreenNodeBuilder, SyntaxNode};
 
 pub use rowan;
@@ -38,8 +38,7 @@ where
     }
 
     pub fn peek(&mut self) -> Option<L::Kind> {
-        self.skip_trivia();
-        self.tokens.peek().map(|t| t.tok)
+        self.peek_token().map(|t| t.tok)
     }
 
     pub fn bump(&mut self, kind: L::Kind) {
@@ -64,6 +63,14 @@ where
         }
     }
 
+    pub fn text<'a, 'b>(&'a mut self) -> Option<&'b str>
+    where
+        'a: 'b,
+    {
+        let token_range = self.peek_token().map(TokenInfo::text_range)?;
+        Some(&self.text[token_range])
+    }
+
     pub fn start(&mut self) -> Marker {
         Marker::new(self.checkpoint())
     }
@@ -78,6 +85,11 @@ where
 
     fn checkpoint(&self) -> Checkpoint {
         self.builder.checkpoint()
+    }
+
+    fn peek_token(&mut self) -> Option<&TokenInfo<L::Kind>> {
+        self.skip_trivia();
+        self.tokens.peek()
     }
 
     fn skip_trivia(&mut self) {
