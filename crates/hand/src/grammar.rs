@@ -136,6 +136,7 @@ fn register_list(p: &mut Parser) {
 /// [register(, offset)?](! | (, offset))?
 fn address(p: &mut Parser) {
     assert!(p.at(OpenSquare));
+    let mut address_kind = OffsetAddress;
     let m = p.start();
     // [
     p.bump(OpenSquare);
@@ -156,11 +157,13 @@ fn address(p: &mut Parser) {
     // (!)?
     if p.at(Bang) {
         punct(p);
+        address_kind = PreIndexAddress;
     } else if p.at(Comma) && !has_offset {
         punct(p);
         offset(p);
+        address_kind = PostIndexAddress;
     }
-    m.finish(p, Address);
+    m.finish(p, address_kind);
 }
 
 /// number | register (, shift)
