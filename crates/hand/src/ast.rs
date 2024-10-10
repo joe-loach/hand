@@ -4,7 +4,6 @@ mod token;
 
 pub use node::*;
 pub use token::*;
-pub use validate::validate;
 
 use crate::{
     grammar::{SyntaxNode, SyntaxToken},
