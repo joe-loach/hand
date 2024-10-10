@@ -10,7 +10,7 @@ use ast::AstNode as _;
 pub use lowering::Fragment;
 use parser::rowan;
 use syntax::SyntaxKind;
-use ual_derive::UAL;
+
 
 /// loop:
 /// ADD r0, r1, #1
@@ -54,7 +54,3 @@ impl rowan::Language for HAND {
         kind.into()
     }
 }
-
-#[derive(UAL)]
-#[ual = "ADD{S}{<c>} {<Rd>,} <Rn>, #<const>"]
-pub struct ADD;
