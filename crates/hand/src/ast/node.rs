@@ -1,5 +1,5 @@
-use super::{AstNode, AstToken, Ident, PunctKind};
-use crate::{grammar::SyntaxNode, syntax::SyntaxKind};
+use super::{AstNode, AstToken, Bang, Ident, PunctKind};
+use crate::{grammar::{SyntaxElement, SyntaxNode}, syntax::SyntaxKind};
 
 macros::node!(pub struct Root(SyntaxKind::Root));
 macros::node!(pub struct Stmt(SyntaxKind::Statement));
@@ -332,6 +332,13 @@ impl Register {
                 _ => unreachable!(),
             }
         }
+    }
+
+    pub fn bang(&self) -> Option<Bang> {
+        self.syntax()
+            .children_with_tokens()
+            .filter_map(SyntaxElement::into_token)
+            .find_map(Bang::cast)
     }
 }
 
