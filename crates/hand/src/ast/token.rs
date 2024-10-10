@@ -17,6 +17,42 @@ macros::token!(pub struct CloseSquare(SyntaxKind::CloseSquare));
 macros::token!(pub struct CurlyBrace(SyntaxKind::OpenCurly | SyntaxKind::CloseCurly));
 macros::token!(pub struct SquareBrace(SyntaxKind::OpenSquare | SyntaxKind::CloseSquare));
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum PunctKind {
+    Comma(Comma),
+    Bang(Bang),
+    Minus(Minus),
+    Plus(Plus),
+}
+
+impl AstToken for PunctKind {
+    fn castable(kind: SyntaxKind) -> bool {
+        use SyntaxKind::*;
+        matches!(kind, Comma | Bang | Minus | Plus)
+    }
+
+    fn cast(node: SyntaxToken) -> Option<Self> {
+        let res = match node.kind() {
+            SyntaxKind::Comma => Self::Comma(Comma(node)),
+            SyntaxKind::Bang => Self::Bang(Bang(node)),
+            SyntaxKind::Minus => Self::Minus(Minus(node)),
+            SyntaxKind::Plus => Self::Plus(Plus(node)),
+            _ => return None,
+        };
+
+        Some(res)
+    }
+
+    fn syntax(&self) -> &SyntaxToken {
+        match self {
+            PunctKind::Comma(n) => n.syntax(),
+            PunctKind::Bang(n) => n.syntax(),
+            PunctKind::Minus(n) => n.syntax(),
+            PunctKind::Plus(n) => n.syntax(),
+        }
+    }
+}
+
 mod macros {
     macro_rules! token {
         ($v:vis struct $ast:ident($kind:pat)) => {
