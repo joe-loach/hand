@@ -1,8 +1,8 @@
+mod ast;
 mod grammar;
 mod lexer;
-mod syntax;
-mod ast;
 mod lowering;
+mod syntax;
 
 use std::sync::Arc;
 
