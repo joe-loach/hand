@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{mem, sync::Arc};
 
 use parser::{rowan, Marker};
 
@@ -19,6 +19,7 @@ pub fn parse(text: Arc<str>) -> SyntaxNode {
     parser.finish()
 }
 
+/// TODO: add ! to register
 #[test]
 fn it_works() {
     let text = "loop: ADD r0, r1, #1 \n\
@@ -111,22 +112,73 @@ fn item(p: &mut Parser) {
 
 /// { (register | comma) (s) }
 fn register_list(p: &mut Parser) {
+    enum PartialGroup {
+        /// No state
+        None,
+        /// Register
+        Reg(Marker),
+        /// Register And
+        RegAnd(Marker),
+    }
+
     assert!(p.at(OpenCurly));
     let m = p.start();
     // {
     p.bump(OpenCurly);
     // (register | comma) (s)
+    // attempt to group together RegisterGroup = [Reg Minus Reg]
+    let mut group = PartialGroup::None;
     while let Some(kind) = p.peek() {
-        if kind == CloseCurly {
-            break;
-        }
-        let m = p.start();
         match kind {
-            Ident if is_register(p) => assert!(register(p)),
-            Comma | Minus => punct(p),
-            _ => unexpected(p),
+            CloseCurly => {
+                // make sure to abandon any markers weren't finished
+                match group {
+                    PartialGroup::None => (),
+                    PartialGroup::Reg(m) | PartialGroup::RegAnd(m) => m.abandon(),
+                }
+                break;
+            }
+            Ident if is_register(p) => match mem::replace(&mut group, PartialGroup::None) {
+                PartialGroup::None => {
+                    group = PartialGroup::Reg(p.start());
+                    assert!(register(p));
+                }
+                PartialGroup::Reg(m) => {
+                    // so far it is [Reg Reg], this isn't a group
+                    // make sure to abandon the marker
+                    m.abandon();
+                    group = PartialGroup::Reg(p.start());
+                    assert!(register(p));
+                }
+                PartialGroup::RegAnd(m) => {
+                    assert!(register(p));
+                    m.finish(p, RegisterRange);
+                }
+            },
+            Minus => match mem::replace(&mut group, PartialGroup::None) {
+                PartialGroup::None => {
+                    punct(p);
+                }
+                PartialGroup::Reg(m) => {
+                    punct(p);
+                    group = PartialGroup::RegAnd(m)
+                }
+                PartialGroup::RegAnd(m) => {
+                    // so far is [Reg Minus Minus], not a group!
+                    // make sure to abandon the marker
+                    m.abandon();
+                    punct(p);
+                }
+            },
+            Comma => {
+                group = PartialGroup::None;
+                punct(p);
+            }
+            _ => {
+                group = PartialGroup::None;
+                unexpected(p)
+            }
         }
-        m.finish(p, Item);
     }
     // }
     expect(p, CloseCurly);
@@ -180,7 +232,7 @@ fn offset(p: &mut Parser) {
                 punct(p);
                 shift(p);
             }
-        },
+        }
         _ => unexpected(p),
     }
 

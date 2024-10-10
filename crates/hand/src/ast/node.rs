@@ -1,8 +1,5 @@
-use super::{AstNode, AstToken, CloseCurly, Ident};
-use crate::{
-    grammar::{SyntaxElement, SyntaxNode},
-    syntax::SyntaxKind,
-};
+use super::{AstNode, AstToken, Ident, PunctKind};
+use crate::{grammar::SyntaxNode, syntax::SyntaxKind};
 
 macros::node!(pub struct Root(SyntaxKind::Root));
 macros::node!(pub struct Stmt(SyntaxKind::Statement));
@@ -16,6 +13,7 @@ macros::node!(pub struct Offset(SyntaxKind::Offset));
 macros::node!(pub struct Shift(SyntaxKind::Shift));
 macros::node!(pub struct Register(SyntaxKind::Register));
 macros::node!(pub struct RegList(SyntaxKind::RegisterList));
+macros::node!(pub struct RegRange(SyntaxKind::RegisterRange));
 macros::node!(pub struct Label(SyntaxKind::Label));
 macros::node!(pub struct Number(SyntaxKind::Number));
 macros::node!(pub struct Name(SyntaxKind::Name));
@@ -52,7 +50,6 @@ impl AstNode for ItemKind {
             SyntaxKind::Name => Self::Name(Name(node)),
             SyntaxKind::Number => Self::Number(Number(node)),
             SyntaxKind::Punct => Self::Punct(Punct(node)),
-            SyntaxKind::Address => Self::Address(Address(node)),
             SyntaxKind::RegisterList => Self::RegList(RegList(node)),
             SyntaxKind::Error => Self::Error(Error(node)),
             _ => return None,
@@ -132,6 +129,35 @@ impl AstNode for NumOrReg {
         match self {
             Self::Num(n) => n.syntax(),
             Self::Reg(n) => n.syntax(),
+        }
+    }
+}
+
+pub enum RegListItem {
+    Group(RegRange),
+    Single(Register),
+}
+
+impl AstNode for RegListItem {
+    fn castable(kind: SyntaxKind) -> bool {
+        use SyntaxKind::*;
+        matches!(kind, RegisterRange | Register)
+    }
+
+    fn cast(node: SyntaxNode) -> Option<Self> {
+        let res = match node.kind() {
+            SyntaxKind::RegisterRange => Self::Group(RegRange(node)),
+            SyntaxKind::Register => Self::Single(Register(node)),
+            _ => return None,
+        };
+
+        Some(res)
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Self::Group(n) => n.syntax(),
+            Self::Single(n) => n.syntax(),
         }
     }
 }
@@ -257,6 +283,35 @@ impl Shift {
 impl Label {
     pub fn name(&self) -> Name {
         self.syntax().children().find_map(Name::cast).unwrap()
+    }
+}
+
+impl RegList {
+    pub fn items(&self) -> impl Iterator<Item = RegListItem> {
+        self.syntax().children().filter_map(RegListItem::cast)
+    }
+}
+
+impl RegRange {
+    pub fn range(&self) -> Option<(u32, u32)> {
+        let low = self.lower();
+        let high = self.higher();
+
+        let low = low.value()?;
+        let high = high.value()?;
+
+        Some((low, high))
+    }
+
+    pub fn lower(&self) -> Register {
+        self.syntax()
+            .first_child()
+            .and_then(Register::cast)
+            .unwrap()
+    }
+
+    pub fn higher(&self) -> Register {
+        self.syntax().last_child().and_then(Register::cast).unwrap()
     }
 }
 

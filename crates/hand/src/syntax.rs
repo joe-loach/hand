@@ -34,6 +34,7 @@ pub enum SyntaxKind {
     Shift,
     Register,
     RegisterList,
+    RegisterRange,
     Label,
     Number,
     Name,
