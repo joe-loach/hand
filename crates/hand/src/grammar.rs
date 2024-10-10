@@ -19,26 +19,6 @@ pub fn parse(text: Arc<str>) -> SyntaxNode {
     parser.finish()
 }
 
-#[test]
-fn it_works() {
-    let text = "loop: ADD r0, r1, #1 \n\
-                SUB r0, r0, r1 \n\
-                CMP r0, r1, #1 \n\
-                ADR r1, loop \n\
-                BEQ loop \n\
-                STMDB SP!, {R0-R4, SP} \n\n\
-                SUBEQ r0, r1, #5\n\
-                LDR r2, [r3, #1] \n\
-                LDR r2, [r3, r4] \n\
-                LDR r2, [r3, r4, LSL #2] \n\
-                LDR r2, [r3, r4, LSL #2]! \n\
-                LDR r2, [r3, r4, LSL r5]! \n\
-                LDR r2, [r3], r4 \n\
-                HLT";
-    let text = Arc::<str>::from(text);
-    dbg!(parse(text));
-}
-
 /// statement(s)
 fn root(p: &mut Parser) {
     let m = p.start();

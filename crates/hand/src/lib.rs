@@ -11,6 +11,26 @@ pub use lowering::Fragment;
 use parser::rowan;
 use syntax::SyntaxKind;
 
+#[test]
+fn it_works() {
+    let text = "loop: ADD r0, r1, #1 \n\
+                SUB r0, r0, r1 \n\
+                CMP r0, r1, #1 \n\
+                ADR r1, loop \n\
+                BEQ loop \n\
+                STMDB SP!, {R0-R4, SP} \n\n\
+                SUBEQ r0, r1, #5\n\
+                LDR r2, [r3, #1] \n\
+                LDR r2, [r3, r4] \n\
+                LDR r2, [r3, r4, LSL #2] \n\
+                LDR r2, [r3, r4, LSL #2]! \n\
+                LDR r2, [r3, r4, LSL r5]! \n\
+                LDR r2, [r3], r4 \n\
+                HLT";
+    let text = Arc::<str>::from(text);
+    let frags =HAND::parse(text).unwrap();
+    dbg!(frags);
+}
 
 /// loop:
 /// ADD r0, r1, #1
