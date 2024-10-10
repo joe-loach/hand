@@ -28,7 +28,7 @@ fn it_works() {
                 LDR r2, [r3], r4 \n\
                 HLT";
     let text = Arc::<str>::from(text);
-    let frags =HAND::parse(text).unwrap();
+    let frags = HAND::parse(text).unwrap();
     dbg!(frags);
 }
 
