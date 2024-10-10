@@ -1,5 +1,8 @@
 use super::{AstNode, AstToken, Bang, Ident, PunctKind};
-use crate::{grammar::{SyntaxElement, SyntaxNode}, syntax::SyntaxKind};
+use crate::{
+    grammar::{SyntaxElement, SyntaxNode},
+    syntax::SyntaxKind,
+};
 
 macros::node!(pub struct Root(SyntaxKind::Root));
 macros::node!(pub struct Stmt(SyntaxKind::Statement));
@@ -189,7 +192,7 @@ impl Stmt {
 
 impl Instr {
     pub fn name(&self) -> Name {
-        self.syntax().children().find_map(Name::cast).unwrap()
+        self.syntax().first_child().and_then(Name::cast).unwrap()
     }
 
     pub fn args(&self) -> Args {
@@ -344,7 +347,10 @@ impl Register {
 
 impl Name {
     pub fn ident(&self) -> Option<Ident> {
-        self.syntax().first_token().and_then(Ident::cast)
+        self.syntax()
+            .children_with_tokens()
+            .filter_map(SyntaxElement::into_token)
+            .find_map(Ident::cast)
     }
 }
 
