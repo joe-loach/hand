@@ -14,6 +14,7 @@ pub enum Fragment {
     Number(u32),
     Address(AddressKind),
     ShiftKind(ShiftKind),
+    Bang,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -185,8 +186,11 @@ fn lower_name(frags: &mut Vec<Fragment>, name: ast::Name) {
     frags.push(Fragment::Name(id.syntax().text_range()));
 }
 
-/// Register
+/// Register Bang?
 fn lower_register(frags: &mut Vec<Fragment>, reg: ast::Register) {
     let value = reg.value().unwrap_or(u32::MAX);
     frags.push(Fragment::Register(value));
+    if reg.bang().is_some() {
+        frags.push(Fragment::Bang);
+    }
 }
