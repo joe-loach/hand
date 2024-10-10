@@ -2,9 +2,12 @@ mod grammar;
 mod lexer;
 mod syntax;
 mod ast;
+mod lowering;
 
 use std::sync::Arc;
 
+use ast::AstNode as _;
+pub use lowering::Fragment;
 use parser::rowan;
 use syntax::SyntaxKind;
 use ual_derive::UAL;
@@ -17,8 +20,25 @@ use ual_derive::UAL;
 pub enum HAND {}
 
 impl HAND {
-    pub fn parse(text: Arc<str>) {
-        todo!()
+    pub fn parse(text: Arc<str>) -> Result<Vec<Fragment>, ()> {
+        let tree = crate::grammar::parse(text.clone());
+        let root = crate::ast::Root::cast(tree).expect("grammar starts at root");
+
+        // TODO: error handling
+        // let mut errors = Vec::new();
+        // crate::ast::validate(root.clone(), &mut errors);
+
+        let frags = lowering::lower(root /*, &mut errors*/);
+
+        // TODO: error handling
+        // if !errors.is_empty() {
+        //     return Err(Errors {
+        //         src: text.clone(),
+        //         inner: errors,
+        //     });
+        // }
+
+        Ok(frags)
     }
 }
 
