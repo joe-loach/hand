@@ -9,7 +9,12 @@ macros::node!(pub struct Stmt(SyntaxKind::Statement));
 macros::node!(pub struct Instr(SyntaxKind::Instruction));
 macros::node!(pub struct Args(SyntaxKind::Arguments));
 macros::node!(pub struct Item(SyntaxKind::Item));
-macros::node!(pub struct Address(SyntaxKind::Address));
+macros::node!(pub struct OffsetAddress(SyntaxKind::OffsetAddress));
+macros::node!(pub struct PreIndexAddress(SyntaxKind::PreIndexAddress));
+macros::node!(pub struct PostIndexAddress(SyntaxKind::PostIndexAddress));
+macros::node!(pub struct Offset(SyntaxKind::Offset));
+macros::node!(pub struct Shift(SyntaxKind::Shift));
+macros::node!(pub struct Register(SyntaxKind::Register));
 macros::node!(pub struct RegList(SyntaxKind::RegisterList));
 macros::node!(pub struct Label(SyntaxKind::Label));
 macros::node!(pub struct Number(SyntaxKind::Number));
@@ -19,6 +24,7 @@ macros::node!(pub struct Error(SyntaxKind::Error));
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ItemKind {
+    Register(Register),
     Name(Name),
     Number(Number),
     Punct(Punct),
@@ -30,11 +36,19 @@ pub enum ItemKind {
 impl AstNode for ItemKind {
     fn castable(kind: SyntaxKind) -> bool {
         use SyntaxKind::*;
-        matches!(kind, Name | Number | Punct | Address | RegisterList | Error)
+        matches!(
+            kind,
+            Register | Name | Number | Punct | RegisterList | Error
+        ) || Address::castable(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
+        if let Some(address) = Address::cast(node.clone()) {
+            return Some(Self::Address(address));
+        }
+
         let res = match node.kind() {
+            SyntaxKind::Register => Self::Register(Register(node)),
             SyntaxKind::Name => Self::Name(Name(node)),
             SyntaxKind::Number => Self::Number(Number(node)),
             SyntaxKind::Punct => Self::Punct(Punct(node)),
@@ -49,6 +63,7 @@ impl AstNode for ItemKind {
 
     fn syntax(&self) -> &SyntaxNode {
         match self {
+            ItemKind::Register(n) => n.syntax(),
             ItemKind::Name(n) => n.syntax(),
             ItemKind::Number(n) => n.syntax(),
             ItemKind::Punct(n) => n.syntax(),
@@ -57,6 +72,77 @@ impl AstNode for ItemKind {
             ItemKind::Error(n) => n.syntax(),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Address {
+    Offset(OffsetAddress),
+    PreIndex(PreIndexAddress),
+    PostIndex(PostIndexAddress),
+}
+
+impl AstNode for Address {
+    fn castable(kind: SyntaxKind) -> bool {
+        use SyntaxKind::*;
+        matches!(kind, OffsetAddress | PreIndexAddress | PostIndexAddress)
+    }
+
+    fn cast(node: SyntaxNode) -> Option<Self> {
+        let res = match node.kind() {
+            SyntaxKind::OffsetAddress => Self::Offset(OffsetAddress(node)),
+            SyntaxKind::PreIndexAddress => Self::PreIndex(PreIndexAddress(node)),
+            SyntaxKind::PostIndexAddress => Self::PostIndex(PostIndexAddress(node)),
+            _ => return None,
+        };
+
+        Some(res)
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Self::Offset(n) => n.syntax(),
+            Self::PreIndex(n) => n.syntax(),
+            Self::PostIndex(n) => n.syntax(),
+        }
+    }
+}
+
+pub enum NumOrReg {
+    Num(Number),
+    Reg(Register),
+}
+
+impl AstNode for NumOrReg {
+    fn castable(kind: SyntaxKind) -> bool {
+        use SyntaxKind::*;
+        matches!(kind, Number | Register)
+    }
+
+    fn cast(node: SyntaxNode) -> Option<Self> {
+        let res = match node.kind() {
+            SyntaxKind::Number => Self::Num(Number(node)),
+            SyntaxKind::Register => Self::Reg(Register(node)),
+            _ => return None,
+        };
+
+        Some(res)
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Self::Num(n) => n.syntax(),
+            Self::Reg(n) => n.syntax(),
+        }
+    }
+}
+
+#[allow(clippy::upper_case_acronyms)]
+pub enum ShiftKind {
+    LSL { amount: Option<NumOrReg> },
+    LSR { amount: Option<NumOrReg> },
+    ASR { amount: Option<NumOrReg> },
+    ROR { amount: Option<NumOrReg> },
+    RRX,
 }
 
 impl Root {
@@ -100,15 +186,127 @@ impl Item {
     }
 }
 
+impl Address {
+    pub fn base(&self) -> Register {
+        self.syntax()
+            .first_child()
+            .and_then(Register::cast)
+            .unwrap()
+    }
+
+    pub fn offset(&self) -> Offset {
+        self.syntax().children().find_map(Offset::cast).unwrap()
+    }
+}
+
+impl Offset {
+    pub fn amount(&self) -> NumOrReg {
+        self.syntax()
+            .first_child()
+            .and_then(NumOrReg::cast)
+            .unwrap()
+    }
+
+    pub fn number(&self) -> Option<Number> {
+        self.syntax().first_child().and_then(Number::cast)
+    }
+
+    pub fn register(&self) -> Option<Register> {
+        self.syntax().first_child().and_then(Register::cast)
+    }
+
+    pub fn shift(&self) -> Option<Shift> {
+        self.syntax().children().find_map(Shift::cast)
+    }
+}
+
+impl Shift {
+    pub fn kind(&self) -> Option<ShiftKind> {
+        let name = self.name().ident()?;
+        let amount = self.amount();
+
+        let kind = match name.text() {
+            "LSL" => ShiftKind::LSL { amount },
+            "LSR" => ShiftKind::LSR { amount },
+            "ASR" => ShiftKind::ASR { amount },
+            "ROR" => ShiftKind::ROR { amount },
+            "RRX" => ShiftKind::RRX,
+            _ => unreachable!(),
+        };
+
+        Some(kind)
+    }
+
+    pub fn name(&self) -> Name {
+        self.syntax().first_child().and_then(Name::cast).unwrap()
+    }
+
+    pub fn amount(&self) -> Option<NumOrReg> {
+        self.syntax().first_child().and_then(NumOrReg::cast)
+    }
+
+    pub fn number(&self) -> Option<Number> {
+        self.syntax().children().find_map(Number::cast)
+    }
+
+    pub fn register(&self) -> Option<Register> {
+        self.syntax().children().find_map(Register::cast)
+    }
+}
+
 impl Label {
     pub fn name(&self) -> Name {
         self.syntax().children().find_map(Name::cast).unwrap()
     }
 }
 
+impl Register {
+    pub fn value(&self) -> Option<u32> {
+        let id = self.syntax().first_token().and_then(Ident::cast)?;
+        let text = id.text().to_lowercase();
+
+        if let Some(rest) = text.strip_prefix('r') {
+            // numbered register
+            rest.parse::<u32>().ok()
+        } else {
+            // named registers
+            match text.as_str() {
+                "sp" => Some(13),
+                "lr" => Some(14),
+                "pc" => Some(15),
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
 impl Name {
     pub fn ident(&self) -> Option<Ident> {
         self.syntax().first_token().and_then(Ident::cast)
+    }
+}
+
+impl Punct {
+    pub fn kind(&self) -> PunctKind {
+        self.syntax()
+            .first_token()
+            .and_then(PunctKind::cast)
+            .unwrap()
+    }
+}
+
+impl Number {
+    pub fn value(&self) -> Option<u32> {
+        let number_token = self.syntax().last_token()?;
+        let number_text = number_token.text();
+        let radix = match number_token.kind() {
+            SyntaxKind::Decimal => 10,
+            SyntaxKind::Hex => 16,
+            SyntaxKind::Octal => 8,
+            SyntaxKind::Binary => 2,
+            _ => unreachable!(),
+        };
+        u32::from_str_radix(number_text, radix).ok()
     }
 }
 
