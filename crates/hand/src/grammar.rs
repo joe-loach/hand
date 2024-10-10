@@ -19,7 +19,6 @@ pub fn parse(text: Arc<str>) -> SyntaxNode {
     parser.finish()
 }
 
-/// TODO: add ! to register
 #[test]
 fn it_works() {
     let text = "loop: ADD r0, r1, #1 \n\
@@ -280,12 +279,14 @@ fn label(p: &mut Parser) -> Result<(), Marker> {
     }
 }
 
-/// RN | SP | LR | PC
+/// RN | SP | LR | PC !?
 fn register(p: &mut Parser) -> bool {
     assert!(p.at(Ident));
     let m = p.start();
     if is_register(p) {
         p.bump(Ident);
+        // !
+        p.eat(Bang);
         m.finish(p, Register);
         true
     } else {
