@@ -1,9 +1,6 @@
-use std::{
-    borrow::Cow,
-    sync::LazyLock,
-};
-use proc_macro_crate::{crate_name, FoundCrate};
 use proc_macro2::{Ident, Span};
+use proc_macro_crate::{crate_name, FoundCrate};
+use std::{borrow::Cow, sync::LazyLock};
 
 pub fn module() -> Module<'static> {
     (*MODULE).borrow()
@@ -33,6 +30,3 @@ impl<'a> Module<'a> {
         Self(Cow::Borrowed(self.0.as_ref()))
     }
 }
-
-
-

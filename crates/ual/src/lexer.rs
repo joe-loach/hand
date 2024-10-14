@@ -23,14 +23,15 @@ impl lexer::Lexable for UAL {
                 SyntaxKind::Ident
             }
 
-            '{' => SyntaxKind::OpenCurly,
-            '}' => SyntaxKind::CloseCurly,
+            '[' => SyntaxKind::OpenSquare,
+            ']' => SyntaxKind::CloseSquare,
             '<' => SyntaxKind::OpenAngled,
             '>' => SyntaxKind::CloseAngled,
             '#' => SyntaxKind::Hash,
             ',' => SyntaxKind::Comma,
             '+' => SyntaxKind::Plus,
             '-' => SyntaxKind::Minus,
+            '!' => SyntaxKind::Bang,
 
             _ => SyntaxKind::Unknown,
         }
@@ -63,7 +64,7 @@ fn is_whitespace(c: char) -> bool {
 fn lexing() {
     use std::sync::Arc;
 
-    let text = Arc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let text = Arc::from("ADD<c> <Rd>, <Rn>, #<const>");
     let toks = lexer::lex::<UAL>(Arc::clone(&text));
 
     for t in toks {

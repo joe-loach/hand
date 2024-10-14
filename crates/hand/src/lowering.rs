@@ -88,7 +88,7 @@ pub fn lower(root: ast::Root) -> Vec<Fragment> {
     frags
 }
 
-/// Address Register Offset
+/// Address Register Offset?
 fn lower_address(frags: &mut Vec<Fragment>, address: ast::Address) {
     let kind = match &address {
         ast::Address::Offset(_) => AddressKind::Offset,
@@ -98,8 +98,9 @@ fn lower_address(frags: &mut Vec<Fragment>, address: ast::Address) {
     frags.push(Fragment::Address(kind));
     let base = address.base();
     lower_register(frags, base);
-    let offset = address.offset();
-    lower_offset(frags, offset);
+    if let Some(offset) = address.offset() {
+        lower_offset(frags, offset);
+    }
 }
 
 /// Amount Shift
@@ -133,9 +134,6 @@ fn lower_shift(frags: &mut Vec<Fragment>, shift: Option<ast::Shift>) {
                 lower_amount(frags, None)
             }
         }
-    } else {
-        frags.push(Fragment::ShiftKind(ShiftKind::LSL));
-        lower_amount(frags, None);
     }
 }
 
@@ -151,11 +149,11 @@ fn lower_reg_list(frags: &mut Vec<Fragment>, list: ast::RegList) {
                 for value in low..=high {
                     set_bit(value);
                 }
-            },
+            }
             ast::RegListItem::Single(register) => {
                 let value = register.value().unwrap_or(0);
                 set_bit(value);
-            },
+            }
         }
     }
 
@@ -167,7 +165,7 @@ fn lower_amount(frags: &mut Vec<Fragment>, amount: Option<ast::NumOrReg>) {
     match amount {
         Some(ast::NumOrReg::Num(number)) => lower_number(frags, number),
         Some(ast::NumOrReg::Reg(register)) => lower_register(frags, register),
-        None => frags.push(Fragment::Number(u32::MAX)),
+        None => (),
     }
 }
 
@@ -175,8 +173,6 @@ fn lower_amount(frags: &mut Vec<Fragment>, amount: Option<ast::NumOrReg>) {
 fn lower_number(frags: &mut Vec<Fragment>, number: ast::Number) {
     if let Some(val) = number.value() {
         frags.push(Fragment::Number(val));
-    } else {
-        frags.push(Fragment::Number(u32::MAX));
     }
 }
 

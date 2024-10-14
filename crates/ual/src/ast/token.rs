@@ -7,43 +7,7 @@ macros::token!(pub struct Hash(SyntaxKind::Hash));
 macros::token!(pub struct Comma(SyntaxKind::Comma));
 macros::token!(pub struct Plus(SyntaxKind::Plus));
 macros::token!(pub struct Minus(SyntaxKind::Minus));
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[repr(transparent)]
-pub struct CurlyBrace(SyntaxToken);
-
-#[allow(dead_code)]
-impl CurlyBrace {
-    #[inline]
-    #[must_use]
-    pub fn is_open(&self) -> bool {
-        self.syntax().kind() == SyntaxKind::OpenCurly
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_close(&self) -> bool {
-        self.syntax().kind() == SyntaxKind::CloseCurly
-    }
-}
-
-impl AstToken for CurlyBrace {
-    fn castable(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::OpenCurly | SyntaxKind::CloseCurly)
-    }
-
-    fn cast(token: SyntaxToken) -> Option<Self> {
-        if Self::castable(token.kind()) {
-            Some(Self(token))
-        } else {
-            None
-        }
-    }
-
-    fn syntax(&self) -> &SyntaxToken {
-        &self.0
-    }
-}
+macros::token!(pub struct Bang(SyntaxKind::Bang));
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]

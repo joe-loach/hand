@@ -30,13 +30,6 @@ impl Root {
     }
 }
 
-impl Optional {
-    #[allow(dead_code)]
-    pub fn items(&self) -> impl Iterator<Item = Item> {
-        self.syntax().children().filter_map(Item::cast)
-    }
-}
-
 impl Special {
     pub fn name(&self) -> Option<Name> {
         self.syntax().children().find_map(Name::cast)
@@ -49,8 +42,29 @@ impl Punct {
         match token.kind() {
             SyntaxKind::Comma => PunctKind::Comma(Comma::cast(token).unwrap()),
             SyntaxKind::Hash => PunctKind::Hash(Hash::cast(token).unwrap()),
+            SyntaxKind::Bang => PunctKind::Bang(Bang::cast(token).unwrap()),
             _ => unreachable!(),
         }
+    }
+}
+
+impl Address {
+    pub fn base(&self) -> Special {
+        self.syntax().first_child().and_then(Special::cast).unwrap()
+    }
+
+    pub fn offset(&self) -> Option<Offset> {
+        self.syntax().children().find_map(Offset::cast)
+    }
+}
+
+impl Offset {
+    pub fn amount(&self) -> Special {
+        self.syntax().children().find_map(Special::cast).unwrap()
+    }
+
+    pub fn shift(&self) -> Option<Special> {
+        self.syntax().last_child().and_then(Special::cast)
     }
 }
 
@@ -58,6 +72,7 @@ impl Punct {
 pub enum PunctKind {
     Comma(Comma),
     Hash(Hash),
+    Bang(Bang),
 }
 
 #[allow(dead_code)]
@@ -87,7 +102,7 @@ impl Name {
 
 #[test]
 fn usage() {
-    let text = std::sync::Arc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let text = std::sync::Arc::from("ADD<c> <Rn>, #<const>");
 
     let root = crate::grammar::parse(text);
     let root = Root::cast(root).unwrap();
@@ -95,25 +110,34 @@ fn usage() {
     fn print_item(it: Item) {
         match it {
             Item::Name(name) => print!("'{}'", name.ident().text()),
-            Item::Optional(opt) => {
-                print!("{{");
-                for it in opt.items() {
-                    print_item(it);
+            Item::Address(addr) => {
+                print!("[");
+                print_special(addr.base());
+                if let Some(offset) = addr.offset() {
+                    print!(", ");
+                    print_special(offset.amount());
+                    if let Some(shift) = offset.shift() {
+                        print!(", ");
+                        print_special(shift);
+                    }
                 }
-                print!("}}");
+                print!("]");
             }
-            Item::Special(sp) => {
-                if let Some(name) = sp.name() {
-                    print!("<");
-                    print!("'{}'", name.ident().text());
-                    print!(">");
-                }
-            }
+            Item::Special(sp) => print_special(sp),
             Item::Punct(pt) => match pt.kind() {
                 PunctKind::Comma(_) => print!(","),
                 PunctKind::Hash(_) => print!("#"),
+                PunctKind::Bang(_) => print!("!"),
             },
-            Item::Error(_err) => print!("!"),
+            Item::Error(err) => print!("*{}*", err.syntax().text()),
+        }
+    }
+
+    fn print_special(sp: Special) {
+        if let Some(name) = sp.name() {
+            print!("<");
+            print!("{}", name.ident().text());
+            print!(">");
         }
     }
 

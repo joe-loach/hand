@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, str::FromStr};
 
 use lexer::Token;
+use parser::rowan::TextRange;
 
 use crate::{
     ast::{AstNode, AstToken, Item, PunctKind, Root},
@@ -8,15 +9,26 @@ use crate::{
     grammar::{SyntaxElement, SyntaxNode},
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Fragment {
-    IdRange(u32),
+    Ident(TextRange),
     Special(Special),
     Byte(u8),
-    ToggleOptional,
+    Address(AddressKind),
 }
 
-#[derive(Debug, Clone, Copy)]
+impl std::fmt::Debug for Fragment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Ident(id) => write!(f, "Ident({:?})", id),
+            Self::Special(sp) => write!(f, "{:?}", sp),
+            Self::Byte(b) => write!(f, "'{}'", std::char::from_u32(*b as u32).unwrap()),
+            Self::Address(kind) => write!(f, "{:?}", kind),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub enum Special {
     /// <Rn>
     Register(u8),
@@ -28,27 +40,41 @@ pub enum Special {
     Const,
     /// <shift>
     Shift,
-    /// <amount>
-    ShiftAmount,
     ///<label>
     Label,
     /// <imm>
     Immediate,
 }
 
+impl std::fmt::Debug for Special {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Register(digit) => f
+                .debug_tuple("Register")
+                .field(&std::char::from_u32(*digit as u32).unwrap())
+                .finish(),
+            Self::Registers => write!(f, "Registers"),
+            Self::Condition => write!(f, "Condition"),
+            Self::Const => write!(f, "Const"),
+            Self::Shift => write!(f, "Shift"),
+            Self::Label => write!(f, "Label"),
+            Self::Immediate => write!(f, "Immediate"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum AddressKind {
+    Offset,
+    PreIndex,
+    PostIndex,
+}
+
 pub fn lower(root: Root, errors: &mut Vec<SyntaxError>) -> Vec<Fragment> {
     let mut t = Traversal::new(errors);
 
     for el in elements(root.syntax()) {
-        if let Element::Item(Item::Optional(ref o)) = el {
-            t.push(el.clone());
-            for el in elements(o.syntax()) {
-                t.push(el);
-            }
-            t.push(el.clone());
-        } else {
-            t.push(el)
-        }
+        t.push(el);
     }
 
     while let Some(it) = t.pop() {
@@ -82,37 +108,34 @@ impl<'a> Traversal<'a> {
     fn lower(&mut self, el: Element) {
         match el {
             Element::Item(Item::Name(name)) => {
-                let range = name.ident().syntax().text_range();
-                // start of ident
-                self.frag(Fragment::IdRange(range.start().into()));
-                // end of ident
-                self.frag(Fragment::IdRange(range.end().into()));
+                let ident = name.ident();
+                let ident = ident.syntax();
+                let range = ident.text_range();
+                self.frag(Fragment::Ident(range));
             }
 
-            // No need to differentiate begin/end optionals,
-            // as they should never nest
-            Element::Item(Item::Optional(_)) => self.frag(Fragment::ToggleOptional),
-
-            Element::Item(Item::Special(s)) => {
-                let Some(name) = s.name() else {
-                    self.error(SyntaxError::new(s.syntax().clone(), ErrorKind::NoIdent));
-                    return;
+            Element::Item(Item::Address(addr)) => {
+                let kind = match addr {
+                    crate::ast::Address::Offset(_) => AddressKind::Offset,
+                    crate::ast::Address::PreIndex(_) => AddressKind::PreIndex,
+                    crate::ast::Address::PostIndex(_) => AddressKind::PostIndex,
                 };
-
-                let Ok(kind) = name.ident().text().parse() else {
-                    self.error(SyntaxError::new(
-                        name.syntax().clone(),
-                        ErrorKind::UnknownSpecial,
-                    ));
-                    return;
-                };
-
-                self.frag(Fragment::Special(kind));
+                self.frag(Fragment::Address(kind));
+                self.lower_special(addr.base());
+                if let Some(offset) = addr.offset() {
+                    self.lower_special(offset.amount());
+                    if let Some(shift) = offset.shift() {
+                        self.lower_special(shift);
+                    }
+                }
             }
+
+            Element::Item(Item::Special(s)) => self.lower_special(s),
 
             Element::Item(Item::Punct(p)) => self.frag(Fragment::Byte(match p.kind() {
                 PunctKind::Comma(_) => b',',
                 PunctKind::Hash(_) => b'#',
+                PunctKind::Bang(_) => b'!',
             })),
 
             Element::Item(Item::Error(err)) => self.error(SyntaxError::new(
@@ -120,8 +143,25 @@ impl<'a> Traversal<'a> {
                 ErrorKind::UnknownItem,
             )),
 
-            Element::Whitespace => self.frag(Fragment::Byte(b'\0')),
+            Element::Whitespace => self.frag(Fragment::Byte(b' ')),
         }
+    }
+
+    fn lower_special(&mut self, s: crate::ast::Special) {
+        let Some(name) = s.name() else {
+            self.error(SyntaxError::new(s.syntax().clone(), ErrorKind::NoIdent));
+            return;
+        };
+
+        let Ok(kind) = name.ident().text().parse() else {
+            self.error(SyntaxError::new(
+                name.syntax().clone(),
+                ErrorKind::UnknownSpecial,
+            ));
+            return;
+        };
+
+        self.frag(Fragment::Special(kind));
     }
 }
 
@@ -159,18 +199,19 @@ impl FromStr for Special {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Some(rest) = s.strip_prefix('R') {
+        let s = s.to_lowercase();
+
+        if let Some(rest) = s.strip_prefix('r') {
             if let [c @ b'A'..=b'Z' | c @ b'a'..=b'z'] = rest.as_bytes() {
                 return Ok(Special::Register(*c));
             }
         }
 
-        let kind = match s {
+        let kind = match s.as_str() {
             "registers" => Special::Registers,
             "c" => Special::Condition,
             "const" => Special::Const,
             "shift" => Special::Shift,
-            "amount" => Special::ShiftAmount,
             "label" => Special::Label,
             "imm" => Special::Immediate,
             _ => return Err(()),

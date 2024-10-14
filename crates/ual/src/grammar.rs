@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use parser::rowan;
 
-use crate::SyntaxKind::*;
 use crate::UAL;
+use crate::{syntax::SyntaxKind, SyntaxKind::*};
 
 pub type SyntaxNode = rowan::SyntaxNode<UAL>;
 pub type SyntaxToken = rowan::SyntaxToken<UAL>;
@@ -31,12 +31,67 @@ fn item(p: &mut Parser) {
     match p.peek() {
         Some(Whitespace) => unreachable!(),
         Some(Ident) => name(p),
-        Some(OpenCurly) => optional(p),
         Some(OpenAngled) => special(p),
-        Some(Comma | Hash) => punct(p),
+        Some(OpenSquare) => address(p),
+        Some(Comma | Hash | Bang) => punct(p),
         Some(_) => error(p),
         None => (),
     }
+}
+
+/// [Register (,<imm> | <rm>)?](! | ,<imm> | <rm>)?
+fn address(p: &mut Parser) {
+    assert!(p.at(OpenSquare));
+    let mut address_kind = OffsetAddress;
+
+    let m = p.start();
+    // [
+    p.bump(OpenSquare);
+    // register
+    special(p);
+    // (, offset)?
+    let has_offset = if p.at(Comma) {
+        punct(p);
+        offset(p);
+        true
+    } else {
+        false
+    };
+    // ]
+    expect(p, CloseSquare);
+    // (!)?
+    if p.at(Bang) {
+        punct(p);
+        address_kind = PreIndexAddress;
+    } else if p.at(Comma) && !has_offset {
+        punct(p);
+        offset(p);
+        address_kind = PostIndexAddress;
+    }
+    m.finish(p, address_kind);
+}
+
+/// <Register | Number> {, <shift>}
+fn offset(p: &mut Parser) {
+    let m = p.start();
+
+    // #<imm> | <rm>
+    let needs_shift = if p.at(Hash) {
+        punct(p);
+        false
+    } else {
+        true
+    };
+    special(p);
+    // , <shift>
+    if needs_shift && p.at(Comma) {
+        punct(p);
+        special(p);
+    } else if needs_shift && !p.at(Comma) {
+        error(p);
+    }
+
+    m.finish(p, Offset);
 }
 
 /// < Name >
@@ -46,39 +101,16 @@ fn special(p: &mut Parser) {
     // <
     p.bump(OpenAngled);
     // Name
-    while let Some(kind) = p.peek() {
-        match kind {
-            CloseAngled => break,
-            Ident => name(p),
-            _ => error(p),
-        }
+    if p.at(Ident) {
+        name(p);
+    } else {
+        error(p);
     }
     // >
     if !p.eat(CloseAngled) {
         error(p);
     }
     m.finish(p, Special);
-}
-
-/// { Item(s) }
-fn optional(p: &mut Parser) {
-    assert!(p.at(OpenCurly));
-    let m = p.start();
-    // {
-    p.bump(OpenCurly);
-    // Item(s)
-    loop {
-        match p.peek() {
-            Some(CloseCurly) => break,
-            Some(_) => item(p),
-            None => break,
-        }
-    }
-    // }
-    if !p.eat(CloseCurly) {
-        error(p);
-    }
-    m.finish(p, Optional);
 }
 
 /// Name(Ident)
@@ -90,21 +122,33 @@ fn name(p: &mut Parser) {
     m.finish(p, Name);
 }
 
-/// Puct(, | #)
+/// Puct(, | # | !)
 fn punct(p: &mut Parser) {
-    assert!(p.at(Comma) | p.at(Hash));
+    assert!(matches!(p.peek(), Some(Comma | Hash | Bang)));
     let m = p.start();
-    // , | #
+    // , | # | !
     p.bump_any();
     m.finish(p, Punct);
 }
 
+/// Expect a `kind`, emit an Error otherwise
+fn expect(p: &mut Parser, kind: SyntaxKind) -> bool {
+    if !p.eat(kind) {
+        p.emit(Error);
+        false
+    } else {
+        true
+    }
+}
+
 /// Error(Any)
 fn error(p: &mut Parser) {
-    let n = p.start();
-    // Any
-    p.bump_any();
-    n.finish(p, Error);
+    if !p.at_end() {
+        let n = p.start();
+        // Any
+        p.bump_any();
+        n.finish(p, Error);
+    }
 }
 
 #[cfg(test)]
@@ -125,7 +169,7 @@ fn print(indent: usize, element: SyntaxElement) {
 
 #[test]
 fn works() {
-    let text = Arc::from("ADD{S}{<c>} {<Rd>,} <Rn>, #<const>");
+    let text = Arc::from("ADD<c> <Rd>, <Rn>, #<const>");
     let root = parse(text);
     print(0, root.into());
 }

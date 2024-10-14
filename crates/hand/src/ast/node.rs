@@ -223,8 +223,8 @@ impl Address {
             .unwrap()
     }
 
-    pub fn offset(&self) -> Offset {
-        self.syntax().children().find_map(Offset::cast).unwrap()
+    pub fn offset(&self) -> Option<Offset> {
+        self.syntax().children().find_map(Offset::cast)
     }
 }
 
@@ -234,14 +234,6 @@ impl Offset {
             .first_child()
             .and_then(NumOrReg::cast)
             .unwrap()
-    }
-
-    pub fn number(&self) -> Option<Number> {
-        self.syntax().first_child().and_then(Number::cast)
-    }
-
-    pub fn register(&self) -> Option<Register> {
-        self.syntax().first_child().and_then(Register::cast)
     }
 
     pub fn shift(&self) -> Option<Shift> {
@@ -272,14 +264,6 @@ impl Shift {
 
     pub fn amount(&self) -> Option<NumOrReg> {
         self.syntax().first_child().and_then(NumOrReg::cast)
-    }
-
-    pub fn number(&self) -> Option<Number> {
-        self.syntax().children().find_map(Number::cast)
-    }
-
-    pub fn register(&self) -> Option<Register> {
-        self.syntax().children().find_map(Register::cast)
     }
 }
 
