@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use miette::SourceSpan;
 use miette::Diagnostic;
+use miette::SourceSpan;
 use thiserror::Error;
 
 use crate::grammar::SyntaxNode;

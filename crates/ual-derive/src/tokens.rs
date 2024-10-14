@@ -1,6 +1,6 @@
 use quote::{quote, ToTokens, TokenStreamExt};
-use ual::{lowering::AddressKind, TextRange};
 use ual::lowering::{Fragment, Special};
+use ual::{lowering::AddressKind, TextRange};
 
 use crate::module;
 
@@ -14,7 +14,7 @@ impl ToTokens for FragToken {
             Fragment::Ident(range) => {
                 let range = RangeToken(range);
                 quote! { #fr_ty::Ident(#range) }
-            },
+            }
             Fragment::Special(sp) => {
                 let sp = SpecialToken(sp);
                 quote! { #fr_ty::Special(#sp) }
@@ -23,7 +23,7 @@ impl ToTokens for FragToken {
             Fragment::Address(kind) => {
                 let kind = AddressKindToken(kind);
                 quote! { #fr_ty::Address(#kind) }
-            },
+            }
         };
         tokens.append_all(fragment);
     }
@@ -37,7 +37,9 @@ impl ToTokens for RangeToken {
         let start: u32 = self.0.start().into();
         let end: u32 = self.0.end().into();
 
-        tokens.append_all(quote! { #ual::TextRange::new(#ual::TextSize::new(#start), #ual::TextSize::new(#end)) });
+        tokens.append_all(
+            quote! { #ual::TextRange::new(#ual::TextSize::new(#start), #ual::TextSize::new(#end)) },
+        );
     }
 }
 

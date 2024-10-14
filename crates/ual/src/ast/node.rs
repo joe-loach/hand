@@ -58,10 +58,7 @@ impl AstNode for Item {
     fn castable(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::Name
-                | SyntaxKind::Special
-                | SyntaxKind::Punct
-                | SyntaxKind::Error
+            SyntaxKind::Name | SyntaxKind::Special | SyntaxKind::Punct | SyntaxKind::Error
         ) || Address::castable(kind)
     }
 

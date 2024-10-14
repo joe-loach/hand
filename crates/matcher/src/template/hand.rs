@@ -9,7 +9,6 @@ pub(crate) struct HANDCursor<'a> {
     frags: &'a [hand::Fragment],
 }
 
-
 impl<'a> HANDCursor<'a> {
     pub(crate) fn new(source: &'a str, frags: &'a [hand::Fragment]) -> Self {
         Self {
@@ -46,7 +45,7 @@ impl<'a> HANDCursor<'a> {
             };
 
             template.push(part);
-        };
+        }
 
         template
     }

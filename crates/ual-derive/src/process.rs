@@ -42,10 +42,7 @@ pub fn process_struct(input: DeriveInput) -> proc_macro2::TokenStream {
 
     let name = input.ident;
 
-    let frags = frags
-        .fragments()
-        .iter()
-        .map(|frag| FragToken(*frag));
+    let frags = frags.fragments().iter().map(|frag| FragToken(*frag));
 
     // remember to set the span as the actual UAL text string
     let span = def.value.span();

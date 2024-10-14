@@ -1,6 +1,6 @@
 mod node;
-mod validate;
 mod token;
+mod validate;
 
 pub use node::*;
 pub use token::*;

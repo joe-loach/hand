@@ -149,11 +149,11 @@ fn lower_reg_list(frags: &mut Vec<Fragment>, list: ast::RegList) {
                 for value in low..=high {
                     set_bit(value);
                 }
-            },
+            }
             ast::RegListItem::Single(register) => {
                 let value = register.value().unwrap_or(0);
                 set_bit(value);
-            },
+            }
         }
     }
 

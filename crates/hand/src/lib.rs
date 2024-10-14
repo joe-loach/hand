@@ -7,7 +7,7 @@ mod syntax;
 use std::sync::Arc;
 
 use ast::AstNode as _;
-pub use lowering::{Fragment, AddressKind};
+pub use lowering::{AddressKind, Fragment};
 use parser::rowan;
 use syntax::SyntaxKind;
 
@@ -44,7 +44,7 @@ impl ParseResult {
     pub fn source(&self) -> &str {
         &self.text
     }
-    
+
     pub fn fragments(&self) -> &[Fragment] {
         &self.fragments
     }

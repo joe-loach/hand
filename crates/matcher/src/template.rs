@@ -23,16 +23,16 @@ pub enum Kind {
 }
 
 /// A packed struct representing a template
-/// 
+///
 /// The [`Inner`] stuct contains two representations,
 /// either a [`tag`](Inner::tag) or [`ident`](Inner::ident).
-/// 
+///
 /// The [`tag`](Inner::tag) representation should look like this in memory:
 /// ` 0 TAG 0 0 0 `
-/// 
+///
 /// The [`ident`](Inner::ident) representation should look like this in memory:
 /// ` 1 ASCII_CHAR `
-/// 
+///
 /// Using the fact that ascii characters use only 7 bits,
 /// we can use the MSB to toggle between the two representations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -152,7 +152,10 @@ fn tag_roundtrip() {
     assert_eq!(Template::condition().kind(), Kind::Condition);
     assert_eq!(Template::offset_address().kind(), Kind::OffsetAddress);
     assert_eq!(Template::pre_index_address().kind(), Kind::PreIndexAddress);
-    assert_eq!(Template::post_index_address().kind(), Kind::PostIndexAddress);
+    assert_eq!(
+        Template::post_index_address().kind(),
+        Kind::PostIndexAddress
+    );
     assert_eq!(Template::shift().kind(), Kind::Shift);
     assert_eq!(Template::number().kind(), Kind::Number);
     assert_eq!(Template::bang().kind(), Kind::Bang);
