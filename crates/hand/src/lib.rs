@@ -7,7 +7,7 @@ mod syntax;
 use std::sync::Arc;
 
 use ast::AstNode as _;
-pub use lowering::Fragment;
+pub use lowering::{Fragment, AddressKind};
 use parser::rowan;
 use syntax::SyntaxKind;
 
