@@ -223,8 +223,8 @@ impl Address {
             .unwrap()
     }
 
-    pub fn offset(&self) -> Offset {
-        self.syntax().children().find_map(Offset::cast).unwrap()
+    pub fn offset(&self) -> Option<Offset> {
+        self.syntax().children().find_map(Offset::cast)
     }
 }
 
