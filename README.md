@@ -16,7 +16,7 @@ Being devoid of multiple encodings and slightly more obscure instructions means 
 - [x] Concrete AST
 - [x] Syntax Errors
 - [x] Lowering
-- [ ] HAND Matching
+- [x] HAND Matching
 - [ ] Encoding
 - [ ] Decoding
 - [ ] Virtual Machine
