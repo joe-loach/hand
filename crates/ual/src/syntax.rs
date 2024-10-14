@@ -8,10 +8,10 @@ pub enum SyntaxKind {
     /// Any sequence of whitespace characters
     Whitespace,
 
-    /// '{'
-    OpenCurly,
-    /// '}'
-    CloseCurly,
+    /// '['
+    OpenSquare,
+    /// ']'
+    CloseSquare,
     /// '<'
     OpenAngled,
     /// '>'
@@ -24,13 +24,23 @@ pub enum SyntaxKind {
     Plus,
     /// '-'
     Minus,
+    /// '!'
+    Bang,
 
     /// Syntax tree root
     Root,
     /// Special items enclosed in '< >'
     Special,
-    /// Optional items enclosed in '{ }'
-    Optional,
+    /// [<Rn> , ...]
+    OffsetAddress,
+    /// [<Rn>, ...]!
+    PreIndexAddress,
+    /// [<Rn>], ...
+    PostIndexAddress,
+    /// An offset for an address base
+    Offset,
+    /// A register 'r_'
+    Register,
     /// Name identifiers
     Name,
     /// Punctuation

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use crate::{attributes, module::module};
 use crate::tokens::FragToken;
+use crate::{attributes, module::module};
 
 use miette::IntoDiagnostic;
 use proc_macro_error2::{abort, abort_if_dirty};
@@ -13,8 +13,10 @@ pub fn process_struct(input: DeriveInput) -> proc_macro2::TokenStream {
     let attribs = attributes::collect(&input.attrs);
     abort_if_dirty();
 
-    let [def] = attribs.as_slice() else {
-        abort!(input, "Structs should only have one ual attribute");
+    let def = match attribs.as_slice() {
+        [] => abort!(input, "Requires a ual attribute '#[ual = \"...\"])"),
+        [def] => def,
+        [_, ..] => abort!(input, "Structs should only have one ual attribute"),
     };
 
     let Expr::Lit(ExprLit {
@@ -28,9 +30,10 @@ pub fn process_struct(input: DeriveInput) -> proc_macro2::TokenStream {
         );
     };
 
-    let res = UAL::parse(Arc::from(ual_str.value())).into_diagnostic();
+    let text: Arc<str> = Arc::from(ual_str.value());
+    let res = UAL::parse(text.clone()).into_diagnostic();
 
-    let ual = match res {
+    let frags = match res {
         Ok(ual) => ual,
         Err(errors) => {
             abort!(ual_str, errors)
@@ -39,16 +42,23 @@ pub fn process_struct(input: DeriveInput) -> proc_macro2::TokenStream {
 
     let name = input.ident;
 
-    let frags = ual.iter().map(|f| FragToken(*f));
+    let frags = frags
+        .fragments()
+        .iter()
+        .map(|frag| FragToken(*frag));
+
     // remember to set the span as the actual UAL text string
     let span = def.value.span();
 
     let ual = module();
+    let text = text.as_ref();
 
     quote_spanned! { span =>
         #[automatically_derived]
         impl #ual::UalSyntax for #name {
-            const PATTERN: #ual::Pattern<'static> = #ual::Pattern::new(::std::borrow::Cow::Borrowed(&[
+            type Source = &'static str;
+
+            const PATTERN: #ual::Pattern<'static, &str> = #ual::Pattern::new(#text, ::std::borrow::Cow::Borrowed(&[
                 #(#frags),*
             ]));
         }
