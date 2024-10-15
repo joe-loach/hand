@@ -8,16 +8,6 @@ pub trait Convert {
 #[repr(transparent)]
 pub struct CIR(Inner);
 
-// impl CIR {
-//     pub fn from_hand(parse: &::hand::ParseResult) -> Vec<CIR> {
-//         HANDCursor::new(parse.source(), parse.fragments()).process()
-//     }
-
-//     pub fn from_ual<S: ::ual::Source>(parse: &::ual::Pattern<S>) -> Vec<CIR> {
-//         UALCursor::new(parse.source(), parse.fragments()).process()
-//     }
-// }
-
 #[rustfmt::skip]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[repr(u8)]
