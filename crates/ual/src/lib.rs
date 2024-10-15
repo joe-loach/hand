@@ -27,7 +27,7 @@ pub enum UAL {}
 impl UAL {
     pub fn parse(text: Arc<str>) -> Result<Pattern<'static, Arc<str>>, Errors> {
         let tree = crate::grammar::parse(text.clone());
-        let root = dbg!(crate::ast::Root::cast(tree).expect("grammar starts at root"));
+        let root = crate::ast::Root::cast(tree).expect("grammar starts at root");
 
         let mut errors = Vec::new();
         crate::ast::validate(root.clone(), &mut errors);

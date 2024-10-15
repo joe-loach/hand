@@ -1,24 +1,22 @@
 //! Common Immediate Representation
 
-mod hand;
-mod ual;
-
-pub(crate) use hand::HANDCursor;
-pub(crate) use ual::UALCursor;
+pub trait Convert {
+    fn to_cir(&self) -> Vec<CIR>;
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct CIR(Inner);
 
-impl CIR {
-    pub fn from_hand(parse: &::hand::ParseResult) -> Vec<CIR> {
-        HANDCursor::new(parse.source(), parse.fragments()).process()
-    }
+// impl CIR {
+//     pub fn from_hand(parse: &::hand::ParseResult) -> Vec<CIR> {
+//         HANDCursor::new(parse.source(), parse.fragments()).process()
+//     }
 
-    pub fn from_ual<S: ::ual::Source>(parse: &::ual::Pattern<S>) -> Vec<CIR> {
-        UALCursor::new(parse.source(), parse.fragments()).process()
-    }
-}
+//     pub fn from_ual<S: ::ual::Source>(parse: &::ual::Pattern<S>) -> Vec<CIR> {
+//         UALCursor::new(parse.source(), parse.fragments()).process()
+//     }
+// }
 
 #[rustfmt::skip]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]

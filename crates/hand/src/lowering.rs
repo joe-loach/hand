@@ -1,3 +1,5 @@
+mod cir;
+
 use parser::rowan::TextRange;
 
 use crate::ast::{self, AstToken};

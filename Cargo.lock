@@ -74,10 +74,6 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "cir"
 version = "0.1.0"
-dependencies = [
- "hand",
- "ual",
-]
 
 [[package]]
 name = "config"
@@ -172,6 +168,7 @@ checksum = "4271d37baee1b8c7e4b708028c57d816cf9d2434acb33a549475f78c181f6253"
 name = "hand"
 version = "0.1.0"
 dependencies = [
+ "cir",
  "lexer",
  "parser",
 ]
@@ -628,6 +625,7 @@ dependencies = [
 name = "ual"
 version = "0.1.0"
 dependencies = [
+ "cir",
  "lexer",
  "miette",
  "parser",

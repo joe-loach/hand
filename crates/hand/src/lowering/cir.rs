@@ -1,16 +1,22 @@
-use hand::AddressKind;
-use ual::TextRange;
+use cir::CIR;
+use parser::rowan::TextRange;
 
-use super::CIR;
+use crate::{AddressKind, Fragment, ParseResult};
+
+impl cir::Convert for ParseResult {
+    fn to_cir(&self) -> Vec<CIR> {
+        HANDCursor::new(self.source(), self.fragments()).process()
+    }
+}
 
 pub(crate) struct HANDCursor<'a> {
     pos: usize,
     source: &'a str,
-    frags: &'a [hand::Fragment],
+    frags: &'a [Fragment],
 }
 
 impl<'a> HANDCursor<'a> {
-    pub(crate) fn new(source: &'a str, frags: &'a [hand::Fragment]) -> Self {
+    pub(crate) fn new(source: &'a str, frags: &'a [Fragment]) -> Self {
         Self {
             pos: 0_usize,
             source,
@@ -23,7 +29,7 @@ impl<'a> HANDCursor<'a> {
 
         while let Some(frag) = self.bump() {
             let part = match frag {
-                hand::Fragment::Instruction(range) | hand::Fragment::Name(range) => {
+                Fragment::Instruction(range) | Fragment::Name(range) => {
                     let text = self.resolve(range);
                     assert!(text.is_ascii());
                     for c in text.bytes() {
@@ -31,17 +37,17 @@ impl<'a> HANDCursor<'a> {
                     }
                     continue;
                 }
-                hand::Fragment::Register(_) => CIR::register(),
-                hand::Fragment::RegisterList(_) => CIR::register_list(),
-                hand::Fragment::Number(_) => CIR::number(),
-                hand::Fragment::Address(kind) => match kind {
+                Fragment::Register(_) => CIR::register(),
+                Fragment::RegisterList(_) => CIR::register_list(),
+                Fragment::Number(_) => CIR::number(),
+                Fragment::Address(kind) => match kind {
                     AddressKind::Offset => CIR::offset_address(),
                     AddressKind::PreIndex => CIR::pre_index_address(),
                     AddressKind::PostIndex => CIR::post_index_address(),
                 },
-                hand::Fragment::ShiftKind(_) => CIR::shift(),
-                hand::Fragment::Bang => CIR::bang(),
-                hand::Fragment::Label(_) => continue,
+                Fragment::ShiftKind(_) => CIR::shift(),
+                Fragment::Bang => CIR::bang(),
+                Fragment::Label(_) => continue,
             };
 
             template.push(part);
@@ -54,7 +60,7 @@ impl<'a> HANDCursor<'a> {
         &self.source[range]
     }
 
-    fn bump(&mut self) -> Option<hand::Fragment> {
+    fn bump(&mut self) -> Option<Fragment> {
         let frag = self.peek();
         if frag.is_some() {
             self.pos += 1;
@@ -62,7 +68,7 @@ impl<'a> HANDCursor<'a> {
         frag
     }
 
-    fn peek(&mut self) -> Option<hand::Fragment> {
+    fn peek(&mut self) -> Option<Fragment> {
         self.frags.get(self.pos).copied()
     }
 }

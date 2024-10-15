@@ -1,18 +1,23 @@
-use ual::{lowering::AddressKind, TextRange};
+use cir::CIR;
 
-use super::CIR;
-
-use ual::lowering::Fragment as UAL;
-use ual::lowering::Special;
+use crate::{
+    lowering::{AddressKind, Fragment, Special}, Pattern, TextRange
+};
 
 pub(crate) struct UALCursor<'a> {
     pos: usize,
     source: &'a str,
-    frags: &'a [ual::lowering::Fragment],
+    frags: &'a [Fragment],
+}
+
+impl<S: crate::Source> cir::Convert for Pattern<'_, S> {
+    fn to_cir(&self) -> Vec<CIR> {
+        UALCursor::new(self.source(), self.fragments()).process()
+    }
 }
 
 impl<'a> UALCursor<'a> {
-    pub(crate) fn new(source: &'a str, frags: &'a [ual::lowering::Fragment]) -> Self {
+    pub(crate) fn new(source: &'a str, frags: &'a [Fragment]) -> Self {
         Self {
             pos: 0_usize,
             source,
@@ -25,7 +30,7 @@ impl<'a> UALCursor<'a> {
 
         while let Some(frag) = self.bump() {
             let part = match frag {
-                UAL::Ident(range) => {
+                Fragment::Ident(range) => {
                     let text = self.resolve(range);
                     assert!(text.is_ascii());
                     for c in text.bytes() {
@@ -33,7 +38,7 @@ impl<'a> UALCursor<'a> {
                     }
                     continue;
                 }
-                UAL::Special(special) => match special {
+                Fragment::Special(special) => match special {
                     Special::Register(_) => CIR::register(),
                     Special::Registers => CIR::register_list(),
                     Special::Condition => CIR::condition(),
@@ -41,14 +46,14 @@ impl<'a> UALCursor<'a> {
                     Special::Shift => CIR::shift(),
                     Special::Label => continue,
                 },
-                UAL::Address(kind) => match kind {
+                Fragment::Address(kind) => match kind {
                     AddressKind::Offset => CIR::offset_address(),
                     AddressKind::PreIndex => CIR::pre_index_address(),
                     AddressKind::PostIndex => CIR::post_index_address(),
                 },
-                UAL::Byte(b'!') => CIR::bang(),
-                UAL::Byte(b'#') => self.number(),
-                UAL::Byte(_) => continue,
+                Fragment::Byte(b'!') => CIR::bang(),
+                Fragment::Byte(b'#') => self.number(),
+                Fragment::Byte(_) => continue,
             };
 
             template.push(part);
@@ -60,7 +65,7 @@ impl<'a> UALCursor<'a> {
     fn number(&mut self) -> CIR {
         assert!(matches!(
             self.bump(),
-            Some(UAL::Special(Special::Const | Special::Immediate))
+            Some(Fragment::Special(Special::Const | Special::Immediate))
         ));
         CIR::number()
     }
@@ -69,7 +74,7 @@ impl<'a> UALCursor<'a> {
         &self.source[range]
     }
 
-    fn bump(&mut self) -> Option<ual::lowering::Fragment> {
+    fn bump(&mut self) -> Option<Fragment> {
         let frag = self.peek();
         if frag.is_some() {
             self.pos += 1;
@@ -77,7 +82,7 @@ impl<'a> UALCursor<'a> {
         frag
     }
 
-    fn peek(&mut self) -> Option<ual::lowering::Fragment> {
+    fn peek(&mut self) -> Option<Fragment> {
         self.frags.get(self.pos).copied()
     }
 }

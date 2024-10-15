@@ -1,3 +1,5 @@
+mod cir;
+
 use std::{collections::VecDeque, str::FromStr};
 
 use lexer::Token;
