@@ -1,6 +1,6 @@
 use ual::{lowering::AddressKind, TextRange};
 
-use super::Template;
+use super::CIR;
 
 use ual::lowering::Fragment as UAL;
 use ual::lowering::Special;
@@ -20,7 +20,7 @@ impl<'a> UALCursor<'a> {
         }
     }
 
-    pub(crate) fn process(&mut self) -> Vec<Template> {
+    pub(crate) fn process(&mut self) -> Vec<CIR> {
         let mut template = Vec::new();
 
         while let Some(frag) = self.bump() {
@@ -29,24 +29,24 @@ impl<'a> UALCursor<'a> {
                     let text = self.resolve(range);
                     assert!(text.is_ascii());
                     for c in text.bytes() {
-                        template.push(Template::ident(c));
+                        template.push(CIR::ident(c));
                     }
                     continue;
                 }
                 UAL::Special(special) => match special {
-                    Special::Register(_) => Template::register(),
-                    Special::Registers => Template::register_list(),
-                    Special::Condition => Template::condition(),
+                    Special::Register(_) => CIR::register(),
+                    Special::Registers => CIR::register_list(),
+                    Special::Condition => CIR::condition(),
                     Special::Const | Special::Immediate => self.number(),
-                    Special::Shift => Template::shift(),
+                    Special::Shift => CIR::shift(),
                     Special::Label => continue,
                 },
                 UAL::Address(kind) => match kind {
-                    AddressKind::Offset => Template::offset_address(),
-                    AddressKind::PreIndex => Template::pre_index_address(),
-                    AddressKind::PostIndex => Template::post_index_address(),
+                    AddressKind::Offset => CIR::offset_address(),
+                    AddressKind::PreIndex => CIR::pre_index_address(),
+                    AddressKind::PostIndex => CIR::post_index_address(),
                 },
-                UAL::Byte(b'!') => Template::bang(),
+                UAL::Byte(b'!') => CIR::bang(),
                 UAL::Byte(b'#') => self.number(),
                 UAL::Byte(_) => continue,
             };
@@ -57,12 +57,12 @@ impl<'a> UALCursor<'a> {
         template
     }
 
-    fn number(&mut self) -> Template {
+    fn number(&mut self) -> CIR {
         assert!(matches!(
             self.bump(),
             Some(UAL::Special(Special::Const | Special::Immediate))
         ));
-        Template::number()
+        CIR::number()
     }
 
     fn resolve(&self, range: TextRange) -> &str {

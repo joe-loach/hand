@@ -1,81 +1,48 @@
-mod template;
-
-use std::{
-    any::{Any, TypeId},
-    collections::HashMap,
-};
-
-use template::{UALCursor, *};
+use cir::CIR;
 use trie_rs::map::{Trie, TrieBuilder};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
-pub struct Match(u32);
-
-pub struct Patterns {
-    used_markers: HashMap<TypeId, Match>,
-    next_index: u32,
-    inner: TrieBuilder<Template, Match>,
+pub struct Patterns<V> {
+    inner: TrieBuilder<CIR, V>,
 }
 
-impl Patterns {
+impl<V> Patterns<V> {
     pub fn new() -> Self {
         Self {
-            used_markers: HashMap::new(),
-            next_index: 0_u32,
             inner: TrieBuilder::new(),
         }
     }
 
-    pub fn finish(self) -> Matcher {
+    pub fn finish(self) -> Matcher<V> {
         Matcher {
             inner: self.inner.build(),
         }
     }
 
-    pub fn push<T: ual::UalSyntax + Any>(&mut self, _: &T) -> Match {
-        // TrieBuilder won't change if you push the same T twice,
-        // so we need to ensure that we also give out the correct marker.
-        if let Some(marker) = self.used_markers.get(&TypeId::of::<T>()) {
-            return *marker;
-        }
-
-        let pattern = T::PATTERN;
-        let template = UALCursor::new(pattern.source(), pattern.fragments()).process();
-
-        let index = self.next_index();
-        self.inner.push(template, index);
-        self.used_markers.insert(TypeId::of::<T>(), index);
-        index
-    }
-
-    fn next_index(&mut self) -> Match {
-        let index = Match(self.next_index);
-        self.next_index += 1;
-        index
+    pub fn push(&mut self, pattern: V, cir: &[CIR]) {
+        self.inner.push(cir, pattern);
     }
 }
 
-impl Default for Patterns {
+impl<V> Default for Patterns<V> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-pub struct Matcher {
-    inner: Trie<Template, Match>,
+pub struct Matcher<V> {
+    inner: Trie<CIR, V>,
 }
 
-impl Matcher {
-    pub fn find_match(&self, hand: &hand::ParseResult) -> Option<Match> {
-        let template = HANDCursor::new(hand.source(), hand.fragments()).process();
-
-        self.inner.exact_match(&template).copied()
+impl<V> Matcher<V>
+{
+    pub fn find_match(&self, cir: &[CIR]) -> Option<&V> {
+        self.inner.exact_match(cir)
     }
 }
 
 #[test]
 fn api() {
+    use ual::UalSyntax;
     use ual_derive::UAL;
 
     #[derive(UAL)]
@@ -91,24 +58,25 @@ fn api() {
     struct LdrImm;
 
     let mut p = Patterns::new();
-    let add_imm = p.push(&AddImm);
-    let _add_reg = p.push(&AddReg);
-    let ldr_imm = p.push(&LdrImm);
-
-    let add_imm_2 = p.push(&AddImm);
-    assert_eq!(add_imm, add_imm_2);
+    p.push(1, &CIR::from_ual(&AddImm::PATTERN));
+    p.push(2, &CIR::from_ual(&AddReg::PATTERN));
+    p.push(3, &CIR::from_ual(&LdrImm::PATTERN));
 
     let t = p.finish();
 
     let text = "ADD r0, r1, #10".into();
     let hand = hand::parse(text);
-    let pattern = t.find_match(&hand).expect("pattern exists!");
+    let pattern = t
+        .find_match(&CIR::from_hand(&hand))
+        .expect("pattern exists!");
 
-    assert_eq!(pattern, add_imm);
+    assert_eq!(*pattern, 1);
 
     let text = "LDR r0, [r1, #1]".into();
     let hand = hand::parse(text);
-    let pattern = t.find_match(&hand).expect("pattern exists!");
+    let pattern = t
+        .find_match(&CIR::from_hand(&hand))
+        .expect("pattern exists!");
 
-    assert_eq!(pattern, ldr_imm);
+    assert_eq!(*pattern, 3);
 }

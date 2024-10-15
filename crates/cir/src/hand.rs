@@ -1,7 +1,7 @@
 use hand::AddressKind;
 use ual::TextRange;
 
-use super::Template;
+use super::CIR;
 
 pub(crate) struct HANDCursor<'a> {
     pos: usize,
@@ -18,7 +18,7 @@ impl<'a> HANDCursor<'a> {
         }
     }
 
-    pub(crate) fn process(&mut self) -> Vec<Template> {
+    pub(crate) fn process(&mut self) -> Vec<CIR> {
         let mut template = Vec::new();
 
         while let Some(frag) = self.bump() {
@@ -27,20 +27,20 @@ impl<'a> HANDCursor<'a> {
                     let text = self.resolve(range);
                     assert!(text.is_ascii());
                     for c in text.bytes() {
-                        template.push(Template::ident(c));
+                        template.push(CIR::ident(c));
                     }
                     continue;
                 }
-                hand::Fragment::Register(_) => Template::register(),
-                hand::Fragment::RegisterList(_) => Template::register_list(),
-                hand::Fragment::Number(_) => Template::number(),
+                hand::Fragment::Register(_) => CIR::register(),
+                hand::Fragment::RegisterList(_) => CIR::register_list(),
+                hand::Fragment::Number(_) => CIR::number(),
                 hand::Fragment::Address(kind) => match kind {
-                    AddressKind::Offset => Template::offset_address(),
-                    AddressKind::PreIndex => Template::pre_index_address(),
-                    AddressKind::PostIndex => Template::post_index_address(),
+                    AddressKind::Offset => CIR::offset_address(),
+                    AddressKind::PreIndex => CIR::pre_index_address(),
+                    AddressKind::PostIndex => CIR::post_index_address(),
                 },
-                hand::Fragment::ShiftKind(_) => Template::shift(),
-                hand::Fragment::Bang => Template::bang(),
+                hand::Fragment::ShiftKind(_) => CIR::shift(),
+                hand::Fragment::Bang => CIR::bang(),
                 hand::Fragment::Label(_) => continue,
             };
 

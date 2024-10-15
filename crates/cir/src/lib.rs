@@ -1,10 +1,24 @@
-#![allow(dead_code)]
+//! Common Immediate Representation
 
 mod hand;
 mod ual;
 
 pub(crate) use hand::HANDCursor;
 pub(crate) use ual::UALCursor;
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
+pub struct CIR(Inner);
+
+impl CIR {
+    pub fn from_hand(parse: &::hand::ParseResult) -> Vec<CIR> {
+        HANDCursor::new(parse.source(), parse.fragments()).process()
+    }
+
+    pub fn from_ual<S: ::ual::Source>(parse: &::ual::Pattern<S>) -> Vec<CIR> {
+        UALCursor::new(parse.source(), parse.fragments()).process()
+    }
+}
 
 #[rustfmt::skip]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -72,11 +86,7 @@ impl Inner {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
-pub struct Template(Inner);
-
-impl Template {
+impl CIR {
     pub const fn char(&self) -> Option<u8> {
         self.0.decode().1
     }
@@ -126,7 +136,7 @@ impl Template {
     }
 }
 
-impl std::fmt::Debug for Template {
+impl std::fmt::Debug for CIR {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut tuple = f.debug_tuple("Template");
         let tuple = if let Some(char) = self.char() {
@@ -141,27 +151,24 @@ impl std::fmt::Debug for Template {
 
 #[test]
 fn ident_roundtrip() {
-    let t = Template::ident(b'A');
+    let t = CIR::ident(b'A');
     assert_eq!(t.char(), Some(b'A'));
 }
 
 #[test]
 fn tag_roundtrip() {
-    assert_eq!(Template::register().kind(), Kind::Register);
-    assert_eq!(Template::register_list().kind(), Kind::RegisterList);
-    assert_eq!(Template::condition().kind(), Kind::Condition);
-    assert_eq!(Template::offset_address().kind(), Kind::OffsetAddress);
-    assert_eq!(Template::pre_index_address().kind(), Kind::PreIndexAddress);
-    assert_eq!(
-        Template::post_index_address().kind(),
-        Kind::PostIndexAddress
-    );
-    assert_eq!(Template::shift().kind(), Kind::Shift);
-    assert_eq!(Template::number().kind(), Kind::Number);
-    assert_eq!(Template::bang().kind(), Kind::Bang);
+    assert_eq!(CIR::register().kind(), Kind::Register);
+    assert_eq!(CIR::register_list().kind(), Kind::RegisterList);
+    assert_eq!(CIR::condition().kind(), Kind::Condition);
+    assert_eq!(CIR::offset_address().kind(), Kind::OffsetAddress);
+    assert_eq!(CIR::pre_index_address().kind(), Kind::PreIndexAddress);
+    assert_eq!(CIR::post_index_address().kind(), Kind::PostIndexAddress);
+    assert_eq!(CIR::shift().kind(), Kind::Shift);
+    assert_eq!(CIR::number().kind(), Kind::Number);
+    assert_eq!(CIR::bang().kind(), Kind::Bang);
 }
 
 #[test]
 fn template_size() {
-    assert_eq!(std::mem::size_of::<Template>(), 1);
+    assert_eq!(std::mem::size_of::<CIR>(), 1);
 }
