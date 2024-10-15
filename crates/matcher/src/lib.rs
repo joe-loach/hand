@@ -33,8 +33,7 @@ pub struct Matcher<V> {
     inner: Trie<CIR, V>,
 }
 
-impl<V> Matcher<V>
-{
+impl<V> Matcher<V> {
     pub fn find_match(&self, cir: &[CIR]) -> Option<&V> {
         self.inner.exact_match(cir)
     }
@@ -42,6 +41,7 @@ impl<V> Matcher<V>
 
 #[test]
 fn api() {
+    use cir::Convert;
     use ual::UalSyntax;
     use ual_derive::UAL;
 
@@ -58,25 +58,21 @@ fn api() {
     struct LdrImm;
 
     let mut p = Patterns::new();
-    p.push(1, &CIR::from_ual(&AddImm::PATTERN));
-    p.push(2, &CIR::from_ual(&AddReg::PATTERN));
-    p.push(3, &CIR::from_ual(&LdrImm::PATTERN));
+    p.push(1, &AddImm::PATTERN.to_cir());
+    p.push(2, &AddReg::PATTERN.to_cir());
+    p.push(3, &LdrImm::PATTERN.to_cir());
 
     let t = p.finish();
 
     let text = "ADD r0, r1, #10".into();
     let hand = hand::parse(text);
-    let pattern = t
-        .find_match(&CIR::from_hand(&hand))
-        .expect("pattern exists!");
+    let pattern = t.find_match(&hand.to_cir()).expect("pattern exists!");
 
     assert_eq!(*pattern, 1);
 
     let text = "LDR r0, [r1, #1]".into();
     let hand = hand::parse(text);
-    let pattern = t
-        .find_match(&CIR::from_hand(&hand))
-        .expect("pattern exists!");
+    let pattern = t.find_match(&hand.to_cir()).expect("pattern exists!");
 
     assert_eq!(*pattern, 3);
 }
