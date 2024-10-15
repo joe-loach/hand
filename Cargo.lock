@@ -72,6 +72,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "cir"
+version = "0.1.0"
+dependencies = [
+ "hand",
+ "ual",
+]
+
+[[package]]
 name = "config"
 version = "0.1.0"
 dependencies = [
@@ -121,6 +129,13 @@ checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
 [[package]]
 name = "enc"
 version = "0.1.0"
+dependencies = [
+ "cir",
+ "hand",
+ "matcher",
+ "ual",
+ "ual-derive",
+]
 
 [[package]]
 name = "equivalent"
@@ -212,9 +227,9 @@ dependencies = [
 name = "matcher"
 version = "0.1.0"
 dependencies = [
+ "cir",
  "hand",
  "modular-bitfield",
- "parser",
  "trie-rs",
  "ual",
  "ual-derive",
