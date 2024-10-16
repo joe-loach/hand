@@ -1,7 +1,8 @@
 use cir::CIR;
 
 use crate::{
-    lowering::{AddressKind, Fragment, Special}, Pattern, TextRange
+    lowering::{AddressKind, Fragment, Special},
+    Pattern, TextRange,
 };
 
 pub(crate) struct UALCursor<'a> {
@@ -26,40 +27,40 @@ impl<'a> UALCursor<'a> {
     }
 
     pub(crate) fn process(&mut self) -> Vec<CIR> {
-        let mut template = Vec::new();
+        let mut cir = Vec::new();
 
         while let Some(frag) = self.bump() {
             let part = match frag {
                 Fragment::Ident(range) => {
                     let text = self.resolve(range);
                     assert!(text.is_ascii());
-                    for c in text.bytes() {
-                        template.push(CIR::ident(c));
+                    for c in text.chars() {
+                        cir.push(CIR::Char(c));
                     }
                     continue;
                 }
                 Fragment::Special(special) => match special {
-                    Special::Register(_) => CIR::register(),
-                    Special::Registers => CIR::register_list(),
-                    Special::Condition => CIR::condition(),
+                    Special::Register(value) => CIR::Register(value as u32),
+                    Special::Registers => CIR::RegisterList(0x0),
+                    Special::Condition => CIR::Condition(Default::default()),
                     Special::Const | Special::Immediate => self.number(),
-                    Special::Shift => CIR::shift(),
+                    Special::Shift => CIR::Shift(Default::default()),
                     Special::Label => continue,
                 },
                 Fragment::Address(kind) => match kind {
-                    AddressKind::Offset => CIR::offset_address(),
-                    AddressKind::PreIndex => CIR::pre_index_address(),
-                    AddressKind::PostIndex => CIR::post_index_address(),
+                    AddressKind::Offset => CIR::OffsetAddress,
+                    AddressKind::PreIndex => CIR::PreIndexAddress,
+                    AddressKind::PostIndex => CIR::PostIndexAddress,
                 },
-                Fragment::Byte(b'!') => CIR::bang(),
+                Fragment::Byte(b'!') => CIR::Bang,
                 Fragment::Byte(b'#') => self.number(),
                 Fragment::Byte(_) => continue,
             };
 
-            template.push(part);
+            cir.push(part);
         }
 
-        template
+        cir
     }
 
     fn number(&mut self) -> CIR {
@@ -67,7 +68,7 @@ impl<'a> UALCursor<'a> {
             self.bump(),
             Some(Fragment::Special(Special::Const | Special::Immediate))
         ));
-        CIR::number()
+        CIR::Number(0x0)
     }
 
     fn resolve(&self, range: TextRange) -> &str {

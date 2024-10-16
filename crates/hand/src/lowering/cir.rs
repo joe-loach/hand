@@ -25,35 +25,41 @@ impl<'a> HANDCursor<'a> {
     }
 
     pub(crate) fn process(&mut self) -> Vec<CIR> {
-        let mut template = Vec::new();
+        let mut cir = Vec::new();
 
         while let Some(frag) = self.bump() {
             let part = match frag {
                 Fragment::Instruction(range) | Fragment::Name(range) => {
                     let text = self.resolve(range);
                     assert!(text.is_ascii());
-                    for c in text.bytes() {
-                        template.push(CIR::ident(c));
+                    for c in text.chars() {
+                        cir.push(CIR::Char(c));
                     }
                     continue;
                 }
-                Fragment::Register(_) => CIR::register(),
-                Fragment::RegisterList(_) => CIR::register_list(),
-                Fragment::Number(_) => CIR::number(),
+                Fragment::Register(r) => CIR::Register(r),
+                Fragment::RegisterList(rl) => CIR::RegisterList(rl),
+                Fragment::Number(num) => CIR::Number(num),
                 Fragment::Address(kind) => match kind {
-                    AddressKind::Offset => CIR::offset_address(),
-                    AddressKind::PreIndex => CIR::pre_index_address(),
-                    AddressKind::PostIndex => CIR::post_index_address(),
+                    AddressKind::Offset => CIR::OffsetAddress,
+                    AddressKind::PreIndex => CIR::PreIndexAddress,
+                    AddressKind::PostIndex => CIR::PostIndexAddress,
                 },
-                Fragment::ShiftKind(_) => CIR::shift(),
-                Fragment::Bang => CIR::bang(),
+                Fragment::Shift(kind) => CIR::Shift(match kind {
+                    super::ShiftKind::LSL => cir::Shift::LSL,
+                    super::ShiftKind::LSR => cir::Shift::LSR,
+                    super::ShiftKind::ASR => cir::Shift::ASR,
+                    super::ShiftKind::ROR => cir::Shift::ROR,
+                    super::ShiftKind::RRX => cir::Shift::RRX,
+                }),
+                Fragment::Bang => CIR::Bang,
                 Fragment::Label(_) => continue,
             };
 
-            template.push(part);
+            cir.push(part);
         }
 
-        template
+        cir
     }
 
     fn resolve(&self, range: TextRange) -> &str {

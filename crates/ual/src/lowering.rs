@@ -33,7 +33,7 @@ impl std::fmt::Debug for Fragment {
 #[derive(Clone, Copy)]
 pub enum Special {
     /// <Rn>
-    Register(u8),
+    Register(char),
     /// <registers>
     Registers,
     /// <c>
@@ -53,7 +53,7 @@ impl std::fmt::Debug for Special {
         match self {
             Self::Register(digit) => f
                 .debug_tuple("Register")
-                .field(&std::char::from_u32(*digit as u32).unwrap())
+                .field(&digit)
                 .finish(),
             Self::Registers => write!(f, "Registers"),
             Self::Condition => write!(f, "Condition"),
@@ -204,7 +204,7 @@ impl FromStr for Special {
         let s = s.to_lowercase();
 
         if let Some(rest) = s.strip_prefix('r') {
-            if let [c @ b'A'..=b'Z' | c @ b'a'..=b'z'] = rest.as_bytes() {
+            if let [c @ 'A'..='Z' | c @ 'a'..='z'] = rest.chars().collect::<Vec<_>>().as_slice() {
                 return Ok(Special::Register(*c));
             }
         }

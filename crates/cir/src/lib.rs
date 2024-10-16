@@ -4,159 +4,73 @@ pub trait Convert {
     fn to_cir(&self) -> Vec<CIR>;
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
-pub struct CIR(Inner);
-
-#[rustfmt::skip]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-#[repr(u8)]
-pub enum Kind {
-    Register            = 0b00001,
-    RegisterList        = 0b00010,
-    Condition           = 0b00011,
-    Shift               = 0b00100,
-    Number              = 0b00110,
-    Bang                = 0b00111,
-    OffsetAddress       = 0b01000,
-    PreIndexAddress     = 0b01001,
-    PostIndexAddress    = 0b01010,
-    Ident               = 0b10000,
-}
-
-/// A packed struct representing a template
-///
-/// The [`Inner`] stuct contains two representations,
-/// either a [`tag`](Inner::tag) or [`ident`](Inner::ident).
-///
-/// The [`tag`](Inner::tag) representation should look like this in memory:
-/// ` 0 TAG 0 0 0 `
-///
-/// The [`ident`](Inner::ident) representation should look like this in memory:
-/// ` 1 ASCII_CHAR `
-///
-/// Using the fact that ascii characters use only 7 bits,
-/// we can use the MSB to toggle between the two representations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
-struct Inner(u8);
+#[derive(kinded::Kinded)]
+#[kinded(derive(PartialOrd, Ord, Hash))]
+pub enum CIR {
+    Char(char),
+    Register(u32),
+    RegisterList(u16),
+    Condition(Condition),
+    Shift(Shift),
+    Number(u32),
+    OffsetAddress,
+    PreIndexAddress,
+    PostIndexAddress,
+    Bang,
+}
 
-impl Inner {
-    const IDENT_MASK: u8 = 0b1000_0000;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Shift {
+    LSL,
+    LSR,
+    ASR,
+    ROR,
+    RRX,
+}
 
-    const fn ident(char: u8) -> Self {
-        Self(Self::IDENT_MASK | char)
-    }
-
-    const fn tag(kind: Kind) -> Self {
-        assert!(kind as u8 != Kind::Ident as u8);
-        let bits = kind as u8;
-        Self(bits << 3)
-    }
-
-    const fn decode(&self) -> (Kind, Option<u8>) {
-        if self.0 & Self::IDENT_MASK != 0 {
-            // decoding an ident
-            let char = (!Self::IDENT_MASK) & self.0;
-            (Kind::Ident, Some(char))
-        } else {
-            // normal tag
-            let bits = self.0 >> 3;
-            // SAFETY:
-            // * size_of::<u8> == size_of::<Kind>
-            // * not a ident tag
-            // * created by casting to u8 and << 3
-            // => shifted up 3 bits, to be created
-            // => to retrive kind, do the opposite
-            let kind = unsafe { std::mem::transmute::<u8, Kind>(bits) };
-            (kind, None)
-        }
+impl Default for Shift {
+    fn default() -> Self {
+        Self::LSL
     }
 }
 
-impl CIR {
-    pub const fn char(&self) -> Option<u8> {
-        self.0.decode().1
-    }
-
-    pub const fn kind(&self) -> Kind {
-        self.0.decode().0
-    }
-
-    pub const fn ident(char: u8) -> Self {
-        Self(Inner::ident(char))
-    }
-
-    pub const fn register() -> Self {
-        Self(Inner::tag(Kind::Register))
-    }
-
-    pub const fn register_list() -> Self {
-        Self(Inner::tag(Kind::RegisterList))
-    }
-
-    pub const fn condition() -> Self {
-        Self(Inner::tag(Kind::Condition))
-    }
-
-    pub const fn offset_address() -> Self {
-        Self(Inner::tag(Kind::OffsetAddress))
-    }
-
-    pub const fn pre_index_address() -> Self {
-        Self(Inner::tag(Kind::PreIndexAddress))
-    }
-
-    pub const fn post_index_address() -> Self {
-        Self(Inner::tag(Kind::PostIndexAddress))
-    }
-
-    pub const fn shift() -> Self {
-        Self(Inner::tag(Kind::Shift))
-    }
-
-    pub const fn number() -> Self {
-        Self(Inner::tag(Kind::Number))
-    }
-
-    pub const fn bang() -> Self {
-        Self(Inner::tag(Kind::Bang))
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Condition {
+    /// Equal
+    EQ = 0b0000,
+    /// Not equal
+    NE = 0b0001,
+    /// Carry set
+    CS = 0b0010,
+    /// Carry clear
+    CC = 0b0011,
+    /// Minus, negative
+    MI = 0b0100,
+    /// Plus, positive or zero
+    PL = 0b0101,
+    /// Overflow
+    VS = 0b0110,
+    /// No overflow
+    VC = 0b0111,
+    /// Unsigned higher
+    HI = 0b1000,
+    /// Unsigned lower or same
+    LS = 0b1001,
+    /// Signed greater than or equal
+    GE = 0b1010,
+    /// Signed less than
+    LT = 0b1011,
+    /// Signed greater than 
+    GT = 0b1100,
+    /// Signed less than or equal
+    LE = 0b1101,
+    /// Always (unconditional)
+    AL = 0b1110,
 }
 
-impl std::fmt::Debug for CIR {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut tuple = f.debug_tuple("Template");
-        let tuple = if let Some(char) = self.char() {
-            tuple.field(&std::char::from_u32(char as u32).unwrap())
-        } else {
-            tuple.field(&self.kind())
-        };
-
-        tuple.finish()
+impl Default for Condition {
+    fn default() -> Self {
+        Self::AL
     }
-}
-
-#[test]
-fn ident_roundtrip() {
-    let t = CIR::ident(b'A');
-    assert_eq!(t.char(), Some(b'A'));
-}
-
-#[test]
-fn tag_roundtrip() {
-    assert_eq!(CIR::register().kind(), Kind::Register);
-    assert_eq!(CIR::register_list().kind(), Kind::RegisterList);
-    assert_eq!(CIR::condition().kind(), Kind::Condition);
-    assert_eq!(CIR::offset_address().kind(), Kind::OffsetAddress);
-    assert_eq!(CIR::pre_index_address().kind(), Kind::PreIndexAddress);
-    assert_eq!(CIR::post_index_address().kind(), Kind::PostIndexAddress);
-    assert_eq!(CIR::shift().kind(), Kind::Shift);
-    assert_eq!(CIR::number().kind(), Kind::Number);
-    assert_eq!(CIR::bang().kind(), Kind::Bang);
-}
-
-#[test]
-fn template_size() {
-    assert_eq!(std::mem::size_of::<CIR>(), 1);
 }

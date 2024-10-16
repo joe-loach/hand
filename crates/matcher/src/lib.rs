@@ -2,7 +2,7 @@ use cir::CIR;
 use trie_rs::map::{Trie, TrieBuilder};
 
 pub struct Patterns<V> {
-    inner: TrieBuilder<CIR, V>,
+    inner: TrieBuilder<cir::CIRKind, V>,
 }
 
 impl<V> Patterns<V> {
@@ -19,7 +19,7 @@ impl<V> Patterns<V> {
     }
 
     pub fn push(&mut self, pattern: V, cir: &[CIR]) {
-        self.inner.push(cir, pattern);
+        self.inner.push(cir.iter().map(CIR::kind).collect::<Vec<_>>(), pattern);
     }
 }
 
@@ -30,12 +30,12 @@ impl<V> Default for Patterns<V> {
 }
 
 pub struct Matcher<V> {
-    inner: Trie<CIR, V>,
+    inner: Trie<cir::CIRKind, V>,
 }
 
 impl<V> Matcher<V> {
     pub fn find_match(&self, cir: &[CIR]) -> Option<&V> {
-        self.inner.exact_match(cir)
+        self.inner.exact_match(cir.iter().map(CIR::kind).collect::<Vec<_>>())
     }
 }
 
