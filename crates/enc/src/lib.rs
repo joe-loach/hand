@@ -3,6 +3,7 @@ mod schema;
 pub mod variable;
 
 pub use schema::*;
+pub use encoder::Encoder;
 
 use cir::CIR;
 
