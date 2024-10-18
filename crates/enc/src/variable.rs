@@ -8,6 +8,8 @@ pub fn find(name: Variable, pattern: &[CIR], obj: &[CIR]) -> Option<CIR> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Variable {
+    /// label
+    Label,
     /// Rn
     Rn,
     /// Rm
@@ -46,6 +48,7 @@ impl Variable {
     /// If the pair are not encodable
     pub fn encode_with_ir(&self, value: CIR) -> u32 {
         match (&self, value) {
+            (Variable::Label, CIR::Label(adr)) => adr as u32,
             (Variable::Rn, CIR::Register(x)) => x,
             (Variable::Rm, CIR::Register(x)) => x,
             (Variable::Rt, CIR::Register(x)) => x,
@@ -93,7 +96,8 @@ impl PartialEq<cir::CIR> for Variable {
 
         matches!(
             (self, other),
-            (Variable::Rn, CIR::Register(N))
+            (Variable::Label, CIR::Label(_))
+                | (Variable::Rn, CIR::Register(N))
                 | (Variable::Rm, CIR::Register(M))
                 | (Variable::Rt, CIR::Register(T))
                 | (Variable::Rd, CIR::Register(D))

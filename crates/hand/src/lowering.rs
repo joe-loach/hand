@@ -1,5 +1,7 @@
 mod cir;
 
+use std::collections::HashMap;
+
 use parser::rowan::TextRange;
 
 use crate::ast::{self, AstToken};
@@ -8,7 +10,7 @@ use crate::ast::{self, AstToken};
 /// A statement begins with [Label?, Instruction?, ..args]
 #[derive(Debug, Clone, Copy)]
 pub enum Fragment {
-    Label(TextRange),
+    Label(i32),
     Instruction(TextRange),
     Register(u32),
     RegisterList(u16),
@@ -40,20 +42,23 @@ pub enum ShiftKind {
 pub fn lower(root: ast::Root) -> Vec<Fragment> {
     let mut frags = Vec::new();
 
+    // TODO: this base of the address should be changable
+    let mut address = 0x0_u32;
+    let mut label_addresses = HashMap::new();
     for stmt in root.statements() {
-        #[cfg(debug_assertions)]
-        let mut has_body = false;
-
         if let Some(label) = stmt.label() {
             let id = label.name().ident().unwrap();
-            frags.push(Fragment::Label(id.syntax().text_range()));
-
-            #[cfg(debug_assertions)]
-            {
-                has_body = true;
-            }
+            let text = id.syntax().text().to_string();
+            let old = label_addresses.insert(text, address);
+            // TODO: validate the ast against this
+            assert!(old.is_none(), "Label defined twice");
         }
+        // instructions are 4 bytes
+        address += 4;
+    }
 
+    let mut address = 0x0_u32;
+    for stmt in root.statements() {
         if let Some(body) = stmt.instruction() {
             let name = body.name();
             let id = name.ident().unwrap();
@@ -64,7 +69,17 @@ pub fn lower(root: ast::Root) -> Vec<Fragment> {
                 let kind = item.kind();
                 match kind {
                     ast::ItemKind::Register(reg) => lower_register(&mut frags, reg),
-                    ast::ItemKind::Name(name) => lower_name(&mut frags, name),
+                    ast::ItemKind::Name(name) => {
+                        if let Some(ident) = name.ident() {
+                            let text = ident.syntax().text();
+                            if let Some(&label) = label_addresses.get(text) {
+                                lower_label(&mut frags, label, address);
+                                continue;
+                            }
+                        }
+
+                        lower_name(&mut frags, name)
+                    }
                     ast::ItemKind::Number(number) => lower_number(&mut frags, number),
                     ast::ItemKind::Address(address) => lower_address(&mut frags, address),
                     ast::ItemKind::RegList(list) => lower_reg_list(&mut frags, list),
@@ -74,17 +89,10 @@ pub fn lower(root: ast::Root) -> Vec<Fragment> {
                     ast::ItemKind::Error(_error) => panic!("Error in ast"),
                 }
             }
-
-            #[cfg(debug_assertions)]
-            {
-                has_body = true;
-            }
+        } else {
+            panic!("Statement has no body");
         }
-
-        #[cfg(debug_assertions)]
-        if !has_body {
-            panic!("Either a label or an instruction should have been emitted!");
-        }
+        address += 4;
     }
 
     frags
@@ -176,6 +184,12 @@ fn lower_number(frags: &mut Vec<Fragment>, number: ast::Number) {
     if let Some(val) = number.value() {
         frags.push(Fragment::Number(val));
     }
+}
+
+/// Label
+fn lower_label(frags: &mut Vec<Fragment>, label: u32, current: u32) {
+    let offset = label as i32 + 8 - current as i32;
+    frags.push(Fragment::Label(offset));
 }
 
 /// Name

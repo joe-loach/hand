@@ -53,7 +53,7 @@ impl<'a> HANDCursor<'a> {
                     super::ShiftKind::RRX => cir::Shift::RRX,
                 }),
                 Fragment::Bang => CIR::Bang,
-                Fragment::Label(_) => continue,
+                Fragment::Label(adr) => CIR::Label(adr),
             };
 
             cir.push(part);
