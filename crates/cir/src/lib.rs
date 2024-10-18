@@ -13,6 +13,7 @@ pub enum CIR {
     Condition(Condition),
     Shift(Shift),
     Number(u32),
+    Label(i32),
     OffsetAddress,
     PreIndexAddress,
     PostIndexAddress,

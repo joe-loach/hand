@@ -75,25 +75,40 @@ fn ldr_reg_preidx() {
     assert_eq!(bits, Word(0b1110_0111_1011_0001_0000_0000_1000_0010));
 }
 
-// TODO: labels
-// #[derive(UAL, Clone)]
-// #[ual = "LDR <Rt>, <label>"]
-// struct LdrImmLit;
+struct LdrImmLit;
 
-// impl_encodable!(LdrImmLit, [COND, 0, 1, 0, P, U, 0, W, 1, 1, 1, 1, 1, R('t'), LABEL]);
+impl Pattern for LdrImmLit {
+    fn pattern(&self) -> &[CIR] {
+        use CIR::*;
+        static PATTERN: &[CIR] = &[
+            Char('L'),
+            Char('D'),
+            Char('R'),
+            Register('t' as u32),
+            Label(i32::MAX),
+        ];
+        PATTERN
+    }
+}
 
-// #[test]
-// fn ldr_imm_lit() {
-//     let matcher = single_pattern(Box::new(LdrImmLit));
+#[rustfmt::skip]
+impl_encodable!(
+    LdrImmLit,
+    [COND, 0, 1, 0, P, U, 0, W, 1, 1, 1, 1, 1, R('t'), LABEL]
+);
 
-//     let text = "LDR r0, label!".into();
-//     let hand = hand::parse(text);
-//     let hand_cir = hand.to_cir();
-//     let pair = matcher::match_pair(&matcher, &hand_cir).expect("pattern exists!");
+#[test]
+fn ldr_imm_lit() {
+    let matcher = single_pattern(Box::new(LdrImmLit));
 
-//     let bits = encode_instruction(pair.value().as_ref(), pair.matched());
+    let text = "label: LDR r0, label".into();
+    let hand = hand::parse(text);
+    let hand_cir = hand.to_cir();
+    let pair = matcher::match_pair(&matcher, &hand_cir).expect("pattern exists!");
 
-//     eprintln!("{:032b}", bits);
+    let bits = encode_instruction(pair.value().as_ref(), pair.matched());
 
-//     assert_eq!(bits, 0b1110_0101_1011_0001_0000_0000_0000_0001);
-// }
+    eprintln!("{:032?}", bits);
+
+    assert_eq!(bits, Word(0b1110_0101_0001_1111_0000_0000_0000_1000));
+}

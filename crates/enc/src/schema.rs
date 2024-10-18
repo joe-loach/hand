@@ -20,6 +20,7 @@ impl std::fmt::Debug for Schema {
                     unreachable!()
                 };
                 match name {
+                    Variable::Label => write!(f, "label")?,
                     Variable::Rn => write!(f, "Rn")?,
                     Variable::Rm => write!(f, "Rm")?,
                     Variable::Rt => write!(f, "Rt")?,
@@ -82,7 +83,7 @@ pub const fn schema<const LN: usize>(layout: [u32; LN]) -> Schema {
             x if x == R('t') => (4, Some(Variable::Rt)),
             IMM5 => (5, Some(Variable::Imm5)),
             IMM12 => (12, Some(Variable::Imm12)),
-            LABEL => (12, Some(Variable::Imm12)),
+            LABEL => (12, Some(Variable::Label)),
             REGISTER_LIST => (16, Some(Variable::RegisterList)),
             _ => panic!("Unknown bit pattern in Schema"),
         };
