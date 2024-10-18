@@ -57,7 +57,7 @@ impl Schema {
 
 pub fn cond(pos: usize, obj: &[CIR]) -> u32 {
     let CIR::Condition(value) = obj[pos - 1] else {
-        panic!("No register at {}", pos)
+        panic!("No conditional at {}", pos)
     };
     match value {
         Condition::EQ => 0b0000,
