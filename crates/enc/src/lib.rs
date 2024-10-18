@@ -8,19 +8,19 @@ mod word;
 pub mod variable;
 
 pub use encoder::Encoder;
+use matcher::Pattern;
 pub use schema::*;
 pub use word::Word;
 
 use cir::CIR;
 
-pub trait Encodable {
-    fn cir(&self) -> &[CIR];
+pub trait Encodable: Pattern {
     fn schema(&self) -> Schema;
 }
 
 pub fn encode_instruction(encodable: &dyn Encodable, obj: &[CIR]) -> Word {
     let Schema { base, variables } = encodable.schema();
-    let pattern = &encodable.cir();
+    let pattern = &encodable.pattern();
 
     let mut bits = base;
 
