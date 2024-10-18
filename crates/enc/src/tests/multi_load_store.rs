@@ -1,9 +1,22 @@
 use super::*;
 
-#[derive(UAL, Clone)]
-#[ual = "LDM <Rn>, <registers>"]
 struct Ldm;
 
+impl Pattern for Ldm {
+    fn pattern(&self) -> &[CIR] {
+        use CIR::*;
+        static PATTERN: &[CIR] = &[
+            Char('L'),
+            Char('D'),
+            Char('M'),
+            Register('n' as u32),
+            RegisterList(u16::MAX),
+        ];
+        PATTERN
+    }
+}
+
+#[rustfmt::skip]
 impl_encodable!(Ldm, [COND, 1, 0, 0, 0, 1, 0, W, 1, R('n'), REGISTER_LIST]);
 
 #[test]
