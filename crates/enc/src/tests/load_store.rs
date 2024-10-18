@@ -18,6 +18,7 @@ impl Pattern for LdrImmPreIndex {
     }
 }
 
+#[rustfmt::skip]
 impl_encodable!(LdrImmPreIndex, [COND, 0, 1, 0, P, U, 0, W, 1, R('n'), R('t'), IMM12]);
 
 #[test]
@@ -54,7 +55,7 @@ impl Pattern for LdrRegPreIndex {
     }
 }
 
-
+#[rustfmt::skip]
 impl_encodable!(
     LdrRegPreIndex,
     [COND, 0, 1, 1, P, U, 0, W, 1, R('n'), R('t'), IMM5, STYPE, 0, R('m')]

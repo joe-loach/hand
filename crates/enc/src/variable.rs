@@ -53,14 +53,12 @@ impl Variable {
             (Variable::RegisterList, CIR::RegisterList(x)) => x as u32,
             (Variable::Signed, CIR::Char('S')) => true as u32,
             (Variable::Condition, CIR::Condition(cond)) => cond as u32,
-            (Variable::Stype, CIR::Shift(shift)) => {
-                match shift {
-                    cir::Shift::LSL => 0b00,
-                    cir::Shift::LSR => 0b01,
-                    cir::Shift::ASR => 0b10,
-                    cir::Shift::ROR => 0b11,
-                    cir::Shift::RRX => 0b11,
-                }
+            (Variable::Stype, CIR::Shift(shift)) => match shift {
+                cir::Shift::LSL => 0b00,
+                cir::Shift::LSR => 0b01,
+                cir::Shift::ASR => 0b10,
+                cir::Shift::ROR => 0b11,
+                cir::Shift::RRX => 0b11,
             },
             (Variable::Imm5, CIR::Number(x)) => x,
             (Variable::Imm12, CIR::Number(x)) => x,
@@ -106,7 +104,10 @@ impl PartialEq<cir::CIR> for Variable {
                 | (Variable::Imm5, CIR::Number(_))
                 | (Variable::Imm12, CIR::Number(_))
                 | (Variable::Imm24, CIR::Number(_))
-                | (Variable::IndexFlag, CIR::OffsetAddress | CIR::PreIndexAddress)
+                | (
+                    Variable::IndexFlag,
+                    CIR::OffsetAddress | CIR::PreIndexAddress
+                )
                 | (Variable::UnsignedFlag, CIR::Number(_))
                 | (Variable::WriteBackFlag, CIR::PreIndexAddress)
         )

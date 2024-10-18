@@ -16,6 +16,7 @@ impl Pattern for Ldm {
     }
 }
 
+#[rustfmt::skip]
 impl_encodable!(Ldm, [COND, 1, 0, 0, 0, 1, 0, W, 1, R('n'), REGISTER_LIST]);
 
 #[test]

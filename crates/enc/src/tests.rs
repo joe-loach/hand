@@ -1,5 +1,5 @@
-mod load_store;
 mod data;
+mod load_store;
 mod multi_load_store;
 
 use super::*;

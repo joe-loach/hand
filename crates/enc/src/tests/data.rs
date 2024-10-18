@@ -17,7 +17,11 @@ impl Pattern for AddImm {
     }
 }
 
-impl_encodable!(AddImm, [COND, 0, 0, 1, 0, 1, 0, 0, S, R('n'), R('d'), IMM12]);
+#[rustfmt::skip]
+impl_encodable!(
+    AddImm,
+    [COND, 0, 0, 1, 0, 1, 0, 0, S, R('n'), R('d'), IMM12]
+);
 
 #[test]
 fn add_imm() {
