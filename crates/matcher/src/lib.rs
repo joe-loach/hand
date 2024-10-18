@@ -1,6 +1,10 @@
 use cir::CIR;
 use trie_rs::map::{Trie, TrieBuilder};
 
+pub trait Pattern {
+    fn pattern(&self) -> &[CIR];
+}
+
 pub struct Patterns<V> {
     inner: TrieBuilder<cir::CIRKind, V>,
 }
@@ -48,7 +52,10 @@ pub fn match_pair<'a, 'b, V>(
     object: &'b [CIR],
 ) -> Option<Match<'a, 'b, V>> {
     let value = matcher.find_match(object)?;
-    Some(Match { value, matched: object })
+    Some(Match {
+        value,
+        matched: object,
+    })
 }
 
 #[derive(Debug)]
@@ -61,7 +68,7 @@ impl<'a, 'b, V> Match<'a, 'b, V> {
     pub fn value(&self) -> &V {
         self.value
     }
-    
+
     pub fn matched(&self) -> &[CIR] {
         self.matched
     }
@@ -70,25 +77,63 @@ impl<'a, 'b, V> Match<'a, 'b, V> {
 #[test]
 fn api() {
     use cir::Convert;
-    use ual::UalSyntax;
-    use ual_derive::UAL;
 
-    #[derive(UAL)]
-    #[ual = "ADD <Rd>, <Rn>, #<const>"]
     struct AddImm;
 
-    #[derive(UAL)]
-    #[ual = "ADD <Rd>, <Rn>, <Rm>"]
+    impl Pattern for AddImm {
+        fn pattern(&self) -> &[CIR] {
+            use CIR::*;
+            static PATTERN: &[CIR] = &[
+                Char('A'),
+                Char('D'),
+                Char('D'),
+                Register('d' as u32),
+                Register('n' as u32),
+                Number(u32::MAX),
+            ];
+            PATTERN
+        }
+    }
+
     struct AddReg;
 
-    #[derive(UAL)]
-    #[ual = "LDR <Rt>, [<Rn>, #<imm>]"]
+    impl Pattern for AddReg {
+        fn pattern(&self) -> &[CIR] {
+            use CIR::*;
+            static PATTERN: &[CIR] = &[
+                Char('A'),
+                Char('D'),
+                Char('D'),
+                Register('d' as u32),
+                Register('n' as u32),
+                Register('m' as u32),
+            ];
+            PATTERN
+        }
+    }
+
     struct LdrImm;
 
+    impl Pattern for LdrImm {
+        fn pattern(&self) -> &[CIR] {
+            use CIR::*;
+            static PATTERN: &[CIR] = &[
+                Char('L'),
+                Char('D'),
+                Char('R'),
+                Register('t' as u32),
+                OffsetAddress,
+                Register('n' as u32),
+                Number(u32::MAX),
+            ];
+            PATTERN
+        }
+    }
+
     let mut p = Patterns::new();
-    p.push(1, |_| AddImm::PATTERN.to_cir().leak());
-    p.push(2, |_| AddReg::PATTERN.to_cir().leak());
-    p.push(3, |_| LdrImm::PATTERN.to_cir().leak());
+    p.push(1, |_| AddImm.pattern());
+    p.push(2, |_| AddReg.pattern());
+    p.push(3, |_| LdrImm.pattern());
 
     let t = p.finish();
 

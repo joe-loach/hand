@@ -1,8 +1,21 @@
 use super::*;
 
-#[derive(UAL, Clone)]
-#[ual = "ADD <Rd>, <Rn>, #<const>"]
 struct AddImm;
+
+impl Pattern for AddImm {
+    fn pattern(&self) -> &[CIR] {
+        use CIR::*;
+        static PATTERN: &[CIR] = &[
+            Char('A'),
+            Char('D'),
+            Char('D'),
+            Register('d' as u32),
+            Register('n' as u32),
+            Number(u32::MAX),
+        ];
+        PATTERN
+    }
+}
 
 impl_encodable!(AddImm, [COND, 0, 0, 1, 0, 1, 0, 0, S, R('n'), R('d'), IMM12]);
 
