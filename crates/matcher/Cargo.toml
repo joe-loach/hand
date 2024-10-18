@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hand = { path = "../hand" }
-ual = { path = "../ual" }
-parser = { path = "../parser" }
+cir = { path = "../cir" }
 
 trie-rs = "0.4.2"
 modular-bitfield = "0.11.2"
 
 [dev-dependencies]
 ual-derive = { path = "../ual-derive" }
+ual = { path = "../ual" }
+hand = { path = "../hand" }

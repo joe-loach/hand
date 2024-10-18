@@ -1,0 +1,7 @@
+[package]
+name = "cir"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kinded = "0.3"

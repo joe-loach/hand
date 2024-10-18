@@ -1,3 +1,5 @@
+mod cir;
+
 use parser::rowan::TextRange;
 
 use crate::ast::{self, AstToken};
@@ -13,7 +15,7 @@ pub enum Fragment {
     Name(TextRange),
     Number(u32),
     Address(AddressKind),
-    ShiftKind(ShiftKind),
+    Shift(ShiftKind),
     Bang,
 }
 
@@ -114,23 +116,23 @@ fn lower_shift(frags: &mut Vec<Fragment>, shift: Option<ast::Shift>) {
     if let Some(kind) = shift.and_then(|shift| shift.kind()) {
         match kind {
             ast::ShiftKind::LSL { amount } => {
-                frags.push(Fragment::ShiftKind(ShiftKind::LSL));
+                frags.push(Fragment::Shift(ShiftKind::LSL));
                 lower_amount(frags, amount)
             }
             ast::ShiftKind::LSR { amount } => {
-                frags.push(Fragment::ShiftKind(ShiftKind::LSR));
+                frags.push(Fragment::Shift(ShiftKind::LSR));
                 lower_amount(frags, amount);
             }
             ast::ShiftKind::ASR { amount } => {
-                frags.push(Fragment::ShiftKind(ShiftKind::ASR));
+                frags.push(Fragment::Shift(ShiftKind::ASR));
                 lower_amount(frags, amount);
             }
             ast::ShiftKind::ROR { amount } => {
-                frags.push(Fragment::ShiftKind(ShiftKind::ROR));
+                frags.push(Fragment::Shift(ShiftKind::ROR));
                 lower_amount(frags, amount);
             }
             ast::ShiftKind::RRX => {
-                frags.push(Fragment::ShiftKind(ShiftKind::RRX));
+                frags.push(Fragment::Shift(ShiftKind::RRX));
                 lower_amount(frags, None)
             }
         }
