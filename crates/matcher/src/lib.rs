@@ -19,7 +19,8 @@ impl<V> Patterns<V> {
     }
 
     pub fn push(&mut self, pattern: V, cir: &[CIR]) {
-        self.inner.push(cir.iter().map(CIR::kind).collect::<Vec<_>>(), pattern);
+        self.inner
+            .push(cir.iter().map(CIR::kind).collect::<Vec<_>>(), pattern);
     }
 }
 
@@ -35,7 +36,8 @@ pub struct Matcher<V> {
 
 impl<V> Matcher<V> {
     pub fn find_match(&self, cir: &[CIR]) -> Option<&V> {
-        self.inner.exact_match(cir.iter().map(CIR::kind).collect::<Vec<_>>())
+        self.inner
+            .exact_match(cir.iter().map(CIR::kind).collect::<Vec<_>>())
     }
 }
 

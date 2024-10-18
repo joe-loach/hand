@@ -51,10 +51,7 @@ pub enum Special {
 impl std::fmt::Debug for Special {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Register(digit) => f
-                .debug_tuple("Register")
-                .field(&digit)
-                .finish(),
+            Self::Register(digit) => f.debug_tuple("Register").field(&digit).finish(),
             Self::Registers => write!(f, "Registers"),
             Self::Condition => write!(f, "Condition"),
             Self::Const => write!(f, "Const"),

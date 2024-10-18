@@ -4,8 +4,7 @@ pub trait Convert {
     fn to_cir(&self) -> Vec<CIR>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(kinded::Kinded)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, kinded::Kinded)]
 #[kinded(derive(PartialOrd, Ord, Hash))]
 pub enum CIR {
     Char(char),
@@ -61,7 +60,7 @@ pub enum Condition {
     GE = 0b1010,
     /// Signed less than
     LT = 0b1011,
-    /// Signed greater than 
+    /// Signed greater than
     GT = 0b1100,
     /// Signed less than or equal
     LE = 0b1101,
