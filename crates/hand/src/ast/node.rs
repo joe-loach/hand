@@ -263,7 +263,7 @@ impl Shift {
     }
 
     pub fn amount(&self) -> Option<NumOrReg> {
-        self.syntax().first_child().and_then(NumOrReg::cast)
+        self.syntax().last_child().and_then(NumOrReg::cast)
     }
 }
 
