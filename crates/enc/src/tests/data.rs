@@ -17,11 +17,18 @@ impl Pattern for AddImm {
     }
 }
 
-#[rustfmt::skip]
-impl_encodable!(
-    AddImm,
-    [COND, 0, 0, 1, 0, 1, 0, 0, S, R('n'), R('d'), IMM12]
-);
+impl Encodable for AddImm {
+    fn schema(&self, obj: &[CIR]) -> Schema {
+        Schema::new()
+            .cond()
+            .one(25)
+            .one(23)
+            .bit(Variable::Signed, obj[4] == CIR::Char('S'), 20)
+            .set(Variable::Rn, reg(5, obj), 20, 16)
+            .set(Variable::Rd, reg(4, obj), 16, 12)
+            .set(Variable::Imm12, imm12(6, obj), 12, 0)
+    }
+}
 
 #[test]
 fn add_imm() {

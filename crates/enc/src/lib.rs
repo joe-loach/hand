@@ -15,29 +15,27 @@ pub use word::Word;
 use cir::CIR;
 
 pub trait Encodable: Pattern {
-    fn schema(&self) -> Schema;
+    fn schema(&self, obj: &[CIR]) -> Schema;
 }
 
 pub fn encode_instruction(encodable: &dyn Encodable, obj: &[CIR]) -> Word {
-    let Schema { base, variables } = encodable.schema();
-    let pattern = &encodable.pattern();
+    let schema = encodable.schema(obj);
 
-    let mut bits = base;
+    let mut bits = 0_u32;
 
-    for var in variables.into_iter().filter_map(|mut var| var.take()) {
-        let encoded = if let Some(value) = variable::find(var.name, pattern, obj) {
-            var.name.encode_with_ir(value)
-        } else if let Some(default) = var.name.has_default() {
-            default
-        } else {
-            panic!(
-                "failed to find '{:?}' in obj, perhaps you have defined your schema incorrectly",
-                var.name
-            );
-        };
-
-        bits |= encoded << var.low;
+    for VariableDef {
+        value, high, low, ..
+    } in schema.variables()
+    {
+        bits |= value << low & range_mask(high, low);
     }
 
     Word(bits)
+}
+
+const fn range_mask(high: u8, low: u8) -> u32 {
+    let top = if high == 32 { u32::MAX } else { 1 << high };
+    let bottom = if high == 32 && low == 0 { 0 } else { 1 << low };
+
+    top - bottom
 }
