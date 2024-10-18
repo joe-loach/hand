@@ -9,6 +9,7 @@ impl Pattern for Ldm {
             Char('L'),
             Char('D'),
             Char('M'),
+            Condition(cir::Condition::AL),
             Register('n' as u32),
             RegisterList(u16::MAX),
         ];
@@ -19,13 +20,13 @@ impl Pattern for Ldm {
 impl Encodable for Ldm {
     fn schema(&self, obj: &[CIR]) -> Schema {
         Schema::new()
-            .cond()
+            .set(Variable::Condition, cond(4, obj), 32, 28)
             .one(27)
             .one(23)
             .bit(Variable::W, false, 21)
             .one(20)
-            .set(Variable::Rn, reg(4, obj), 20, 16)
-            .set(Variable::RegisterList, register_list(5, obj), 16, 0)
+            .set(Variable::Rn, reg(5, obj), 20, 16)
+            .set(Variable::RegisterList, register_list(6, obj), 16, 0)
     }
 }
 
