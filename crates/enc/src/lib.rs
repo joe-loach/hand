@@ -23,7 +23,10 @@ pub fn encode_instruction(encodable: &dyn Encodable, obj: &[CIR]) -> Word {
 
     let mut bits = 0_u32;
 
-    for VariableDef { value, high, low, .. } in schema.variables() {
+    for VariableDef {
+        value, high, low, ..
+    } in schema.variables()
+    {
         bits |= value << low & range_mask(high, low);
     }
 
@@ -31,16 +34,8 @@ pub fn encode_instruction(encodable: &dyn Encodable, obj: &[CIR]) -> Word {
 }
 
 const fn range_mask(high: u8, low: u8) -> u32 {
-    let top = if high == 32 {
-        u32::MAX
-    } else {
-        1 << high
-    };
-    let bottom = if high == 32 && low == 0 {
-        0
-    } else {
-        1 << low
-    };
+    let top = if high == 32 { u32::MAX } else { 1 << high };
+    let bottom = if high == 32 && low == 0 { 0 } else { 1 << low };
 
-    top-bottom
+    top - bottom
 }
