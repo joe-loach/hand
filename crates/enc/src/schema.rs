@@ -1,128 +1,117 @@
-use crate::variable::{Variable, VariableDef};
+use std::collections::HashSet;
 
-const VAR_LEN: usize = 16;
+use cir::{Condition, CIR};
 
-/// Describes what variables are needed and which bits they fill.
+use crate::variable::Variable;
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
+pub struct VariableDef {
+    pub name: Variable,
+    pub value: u32,
+    pub high: u8,
+    pub low: u8,
+}
+
+#[derive(Default)]
 pub struct Schema {
-    pub(crate) base: u32,
-    // slots for 16 variables
-    pub(crate) variables: [Option<VariableDef>; VAR_LEN],
+    map: HashSet<VariableDef>,
 }
 
-impl std::fmt::Debug for Schema {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Schema(")?;
-        write!(f, "{:032b}", self.base)?;
-        if self.variables.first().is_some_and(|it| it.is_some()) {
-            write!(f, ", {{ ")?;
-            for def in self.variables.iter().filter(|it| it.is_some()).rev() {
-                let Some(VariableDef { name, high, low }) = def else {
-                    unreachable!()
-                };
-                match name {
-                    Variable::Label => write!(f, "label")?,
-                    Variable::Rn => write!(f, "Rn")?,
-                    Variable::Rm => write!(f, "Rm")?,
-                    Variable::Rt => write!(f, "Rt")?,
-                    Variable::Rd => write!(f, "Rd")?,
-                    Variable::RegisterList => write!(f, "registers")?,
-                    Variable::Signed => write!(f, "S")?,
-                    Variable::Condition => write!(f, "cond")?,
-                    Variable::Stype => write!(f, "stype")?,
-                    Variable::Imm5 => write!(f, "imm5")?,
-                    Variable::Imm12 => write!(f, "imm12")?,
-                    Variable::Imm24 => write!(f, "imm24")?,
-                    Variable::IndexFlag => write!(f, "P")?,
-                    Variable::UnsignedFlag => write!(f, "U")?,
-                    Variable::WriteBackFlag => write!(f, "W")?,
-                }
-                write!(f, "({},{})", high, low)?;
-                write!(f, " ")?;
-            }
-            write!(f, "}}")?;
-        }
-        write!(f, ")")?;
-        Ok(())
+impl Schema {
+    pub fn new() -> Self {
+        Self::default()
     }
-}
 
-pub const fn arg(name: u32, position: u32) -> u64 {
-    (name as u64) << 32 | position as u64
-}
+    pub fn cond(self) -> Self {
+        // FIXME: #3
+        // self.set(Variable::Condition, Value::Ref(2), 32, 28)
+        self.set(Variable::Condition, Condition::AL as u32, 32, 28)
+    }
 
-pub const fn schema<const LN: usize>(layout: [u32; LN]) -> Schema {
-    assert!(LN <= 32);
+    pub fn one(self, bit: u8) -> Self {
+        self.set(Variable::One, 1, bit + 1, bit)
+    }
 
-    let mut variables: [Option<VariableDef>; VAR_LEN] = [const { None }; VAR_LEN];
-
-    let mut base = 0x0;
-
-    let mut var_idx = 0;
-    let mut bit = 0;
-
-    let mut i = LN;
-    while i != 0 {
-        i = i.saturating_sub(1);
-        let curr = layout[i];
-
-        let (bit_len, set_var) = match curr {
-            0 => (1, None),
-            1 => {
-                base |= 1 << bit;
-                (1, None)
-            }
-            S => (1, Some(Variable::Signed)),
-            P => (1, Some(Variable::IndexFlag)),
-            U => (1, Some(Variable::UnsignedFlag)),
-            W => (1, Some(Variable::UnsignedFlag)),
-            STYPE => (2, Some(Variable::Stype)),
-            COND => (4, Some(Variable::Condition)),
-            x if x == R('n') => (4, Some(Variable::Rn)),
-            x if x == R('m') => (4, Some(Variable::Rm)),
-            x if x == R('d') => (4, Some(Variable::Rd)),
-            x if x == R('t') => (4, Some(Variable::Rt)),
-            IMM5 => (5, Some(Variable::Imm5)),
-            IMM12 => (12, Some(Variable::Imm12)),
-            LABEL => (12, Some(Variable::Label)),
-            REGISTER_LIST => (16, Some(Variable::RegisterList)),
-            _ => panic!("Unknown bit pattern in Schema"),
-        };
-
-        if let Some(name) = set_var {
-            variables[var_idx] = Some(VariableDef {
+    pub fn bit(mut self, name: Variable, value: bool, bit: u8) -> Self {
+        if value {
+            self.map.insert(VariableDef {
                 name,
-                high: bit + bit_len,
+                value: 1,
+                high: bit + 1,
                 low: bit,
             });
-            var_idx += 1;
         }
-
-        bit += bit_len;
+        self
     }
 
-    assert!(bit == 32, "Incorrect number of bits to build a Schema");
-
-    Schema { base, variables }
+    pub fn set(mut self, name: Variable, value: u32, high: u8, low: u8) -> Self {
+        self.map.insert(VariableDef {
+            name,
+            value,
+            high,
+            low,
+        });
+        self
+    }
 }
 
-pub const LABEL: u32 = 1_u32 << 31;
-pub const COND: u32 = 1_u32 << 30;
-pub const STYPE: u32 = 1_u32 << 29;
+impl Schema {
+    pub(crate) fn variables(self) -> impl Iterator<Item = VariableDef> {
+        self.map.into_iter()
+    }
+}
 
-pub const S: u32 = 1_u32 << 24;
-pub const P: u32 = 1_u32 << 23;
-pub const U: u32 = 1_u32 << 22;
-pub const W: u32 = 1_u32 << 21;
+pub fn reg(pos: usize, obj: &[CIR]) -> u32 {
+    let CIR::Register(value) = obj[pos - 1] else {
+        panic!("No register at {}", pos)
+    };
+    value
+}
 
-pub const IMM5: u32 = 1_u32 << 20;
-pub const IMM12: u32 = 1_u32 << 19;
-pub const IMM24: u32 = 1_u32 << 18;
+pub fn imm12(pos: usize, obj: &[CIR]) -> u32 {
+    let CIR::Number(value) = obj[pos - 1] else {
+        panic!("No number at {}", pos)
+    };
+    value & 0xFFF
+}
 
-pub const REGISTER_LIST: u32 = 1_u32 << 9;
+pub fn imm5(pos: usize, obj: &[CIR]) -> u32 {
+    let CIR::Number(value) = obj[pos - 1] else {
+        panic!("No number at {}", pos)
+    };
+    value & 0x1F
+}
 
-#[allow(non_snake_case)]
-pub const fn R(x: char) -> u32 {
-    assert!(x.is_ascii());
-    let x = (x as u8) as u32;
-    (1_u32 << 8) + x
+pub fn stype(pos: usize, obj: &[CIR]) -> u32 {
+    let CIR::Shift(shift) = obj[pos - 1] else {
+        panic!("No stype at {}", pos)
+    };
+
+    match shift {
+        cir::Shift::LSL => 0b00,
+        cir::Shift::LSR => 0b01,
+        cir::Shift::ASR => 0b10,
+        cir::Shift::ROR => 0b11,
+        cir::Shift::RRX => 0b11,
+    }
+}
+
+pub fn label(pos: usize, obj: &[CIR]) -> (u32, bool) {
+    let CIR::Label(value) = obj[pos - 1] else {
+        panic!("no label at {}", pos)
+    };
+    let signed = value.is_negative();
+    // value
+    if signed {
+        (value.wrapping_neg() as u32, signed)
+    } else {
+        (value as u32, signed)
+    }
+}
+
+pub fn register_list(pos: usize, obj: &[CIR]) -> u32 {
+    let CIR::RegisterList(value) = obj[pos - 1] else {
+        panic!("No register list at {}", pos)
+    };
+    value as u32
 }

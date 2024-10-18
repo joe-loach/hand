@@ -16,8 +16,18 @@ impl Pattern for Ldm {
     }
 }
 
-#[rustfmt::skip]
-impl_encodable!(Ldm, [COND, 1, 0, 0, 0, 1, 0, W, 1, R('n'), REGISTER_LIST]);
+impl Encodable for Ldm {
+    fn schema(&self, obj: &[CIR]) -> Schema {
+        Schema::new()
+            .cond()
+            .one(27)
+            .one(23)
+            .bit(Variable::W, false, 21)
+            .one(20)
+            .set(Variable::Rn, reg(4, obj), 20, 16)
+            .set(Variable::RegisterList, register_list(5, obj), 16, 0)
+    }
+}
 
 #[test]
 fn ldm() {
