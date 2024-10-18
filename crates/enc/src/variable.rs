@@ -1,10 +1,5 @@
 use cir::{Condition, CIR};
 
-const N: u32 = 'n' as u32;
-const M: u32 = 'm' as u32;
-const T: u32 = 't' as u32;
-const D: u32 = 'd' as u32;
-
 pub fn find(name: Variable, pattern: &[CIR], obj: &[CIR]) -> Option<CIR> {
     let pos = pattern.iter().position(|ir| name == *ir)?;
     obj.get(pos).copied()
@@ -35,6 +30,12 @@ pub enum Variable {
     Imm12,
     /// imm24
     Imm24,
+    /// P
+    IndexFlag,
+    /// U
+    UnsignedFlag,
+    /// W
+    WriteBackFlag,
 }
 
 impl Variable {
@@ -52,10 +53,23 @@ impl Variable {
             (Variable::RegisterList, CIR::RegisterList(x)) => x as u32,
             (Variable::Signed, CIR::Char('S')) => true as u32,
             (Variable::Condition, CIR::Condition(cond)) => cond as u32,
-            (Variable::Stype, CIR::Shift(shift)) => shift as u32,
+            (Variable::Stype, CIR::Shift(shift)) => {
+                match shift {
+                    cir::Shift::LSL => 0b00,
+                    cir::Shift::LSR => 0b01,
+                    cir::Shift::ASR => 0b10,
+                    cir::Shift::ROR => 0b11,
+                    cir::Shift::RRX => 0b11,
+                }
+            },
             (Variable::Imm5, CIR::Number(x)) => x,
             (Variable::Imm12, CIR::Number(x)) => x,
             (Variable::Imm24, CIR::Number(x)) => x,
+            (Variable::IndexFlag, CIR::OffsetAddress | CIR::PreIndexAddress) => true as u32,
+            // TODO: signs? U = 0 when negative
+            // for now all numbers are positive so U === 1
+            (Variable::UnsignedFlag, CIR::Number(_)) => true as u32,
+            (Variable::WriteBackFlag, CIR::PreIndexAddress) => true as u32,
             _ => panic!("Pair not encodable"),
         }
     }
@@ -64,6 +78,9 @@ impl Variable {
         match self {
             Variable::Signed => Some(false as u32),
             Variable::Condition => Some(self.encode_with_ir(CIR::Condition(Condition::AL))),
+            Variable::IndexFlag => Some(false as u32),
+            Variable::UnsignedFlag => Some(false as u32),
+            Variable::WriteBackFlag => Some(false as u32),
             _ => None,
         }
     }
@@ -71,6 +88,11 @@ impl Variable {
 
 impl PartialEq<cir::CIR> for Variable {
     fn eq(&self, other: &cir::CIR) -> bool {
+        const N: u32 = 'n' as u32;
+        const M: u32 = 'm' as u32;
+        const T: u32 = 't' as u32;
+        const D: u32 = 'd' as u32;
+
         matches!(
             (self, other),
             (Variable::Rn, CIR::Register(N))
@@ -84,6 +106,9 @@ impl PartialEq<cir::CIR> for Variable {
                 | (Variable::Imm5, CIR::Number(_))
                 | (Variable::Imm12, CIR::Number(_))
                 | (Variable::Imm24, CIR::Number(_))
+                | (Variable::IndexFlag, CIR::OffsetAddress | CIR::PreIndexAddress)
+                | (Variable::UnsignedFlag, CIR::Number(_))
+                | (Variable::WriteBackFlag, CIR::PreIndexAddress)
         )
     }
 }

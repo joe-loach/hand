@@ -1,10 +1,12 @@
 use crate::variable::{Variable, VariableDef};
 
+const VAR_LEN: usize = 16;
+
 /// Describes what variables are needed and which bits they fill.
 pub struct Schema {
     pub(crate) base: u32,
-    // slots for 8 variables
-    pub(crate) variables: [Option<VariableDef>; 8],
+    // slots for 16 variables
+    pub(crate) variables: [Option<VariableDef>; VAR_LEN],
 }
 
 impl std::fmt::Debug for Schema {
@@ -29,6 +31,9 @@ impl std::fmt::Debug for Schema {
                     Variable::Imm5 => write!(f, "imm5")?,
                     Variable::Imm12 => write!(f, "imm12")?,
                     Variable::Imm24 => write!(f, "imm24")?,
+                    Variable::IndexFlag => write!(f, "P")?,
+                    Variable::UnsignedFlag => write!(f, "U")?,
+                    Variable::WriteBackFlag => write!(f, "W")?,
                 }
                 write!(f, "({},{})", high, low)?;
                 write!(f, " ")?;
@@ -47,7 +52,7 @@ pub const fn arg(name: u32, position: u32) -> u64 {
 pub const fn schema<const LN: usize>(layout: [u32; LN]) -> Schema {
     assert!(LN <= 32);
 
-    let mut variables: [Option<VariableDef>; 8] = [const { None }; 8];
+    let mut variables: [Option<VariableDef>; VAR_LEN] = [const { None }; VAR_LEN];
 
     let mut base = 0x0;
 
@@ -65,13 +70,20 @@ pub const fn schema<const LN: usize>(layout: [u32; LN]) -> Schema {
                 base |= 1 << bit;
                 (1, None)
             }
-            COND => (4, Some(Variable::Condition)),
             S => (1, Some(Variable::Signed)),
-            IMM12 => (12, Some(Variable::Imm12)),
+            P => (1, Some(Variable::IndexFlag)),
+            U => (1, Some(Variable::UnsignedFlag)),
+            W => (1, Some(Variable::UnsignedFlag)),
+            STYPE => (2, Some(Variable::Stype)),
+            COND => (4, Some(Variable::Condition)),
             x if x == R('n') => (4, Some(Variable::Rn)),
             x if x == R('m') => (4, Some(Variable::Rm)),
             x if x == R('d') => (4, Some(Variable::Rd)),
             x if x == R('t') => (4, Some(Variable::Rt)),
+            IMM5 => (5, Some(Variable::Imm5)),
+            IMM12 => (12, Some(Variable::Imm12)),
+            LABEL => (12, Some(Variable::Imm12)),
+            REGISTER_LIST => (16, Some(Variable::RegisterList)),
             _ => panic!("Unknown bit pattern in Schema"),
         };
 
@@ -92,15 +104,24 @@ pub const fn schema<const LN: usize>(layout: [u32; LN]) -> Schema {
     Schema { base, variables }
 }
 
-pub const COND: u32 = 1_u32 << 31;
+pub const LABEL: u32 = 1_u32 << 31;
+pub const COND: u32 = 1_u32 << 30;
+pub const STYPE: u32 = 1_u32 << 29;
 
-pub const S: u32 = 1_u32 << 30;
+pub const S: u32 = 1_u32 << 24;
+pub const P: u32 = 1_u32 << 23;
+pub const U: u32 = 1_u32 << 22;
+pub const W: u32 = 1_u32 << 21;
 
-pub const IMM12: u32 = 1_u32 << 29;
+pub const IMM5: u32 = 1_u32 << 20;
+pub const IMM12: u32 = 1_u32 << 19;
+pub const IMM24: u32 = 1_u32 << 18;
+
+pub const REGISTER_LIST: u32 = 1_u32 << 9;
 
 #[allow(non_snake_case)]
 pub const fn R(x: char) -> u32 {
     assert!(x.is_ascii());
     let x = (x as u8) as u32;
-    (1_u32 << 28) + x
+    (1_u32 << 8) + x
 }
