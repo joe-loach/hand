@@ -44,7 +44,12 @@ impl<'a> UALCursor<'a> {
                     Special::Registers => CIR::RegisterList(0x0),
                     Special::Condition => CIR::Condition(Default::default()),
                     Special::Const | Special::Immediate => self.number(),
-                    Special::Shift => CIR::Shift(Default::default()),
+                    // FIXME: don't assume this is always a number, it could be a register too
+                    Special::Shift => {
+                        cir.push(CIR::Shift(Default::default()));
+                        cir.push(CIR::Number(0x0));
+                        continue;
+                    },
                     Special::Label => continue,
                 },
                 Fragment::Address(kind) => match kind {
