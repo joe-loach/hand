@@ -21,10 +21,15 @@ pub enum CIR {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Shift {
+    /// Logical shift left
     LSL,
+    /// Logical shift right
     LSR,
+    /// Arithmetic shift right
     ASR,
+    /// Rotate right
     ROR,
+    /// Special case of ROR when the immediate = 0
     RRX,
 }
 
