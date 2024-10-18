@@ -18,7 +18,8 @@ impl<V> Patterns<V> {
         }
     }
 
-    pub fn push(&mut self, pattern: V, cir: &[CIR]) {
+    pub fn push(&mut self, mut pattern: V, cir: impl FnOnce(&mut V) -> &[CIR]) {
+        let cir = cir(&mut pattern);
         self.inner
             .push(cir.iter().map(CIR::kind).collect::<Vec<_>>(), pattern);
     }
@@ -60,9 +61,9 @@ fn api() {
     struct LdrImm;
 
     let mut p = Patterns::new();
-    p.push(1, &AddImm::PATTERN.to_cir());
-    p.push(2, &AddReg::PATTERN.to_cir());
-    p.push(3, &LdrImm::PATTERN.to_cir());
+    p.push(1, |_| AddImm::PATTERN.to_cir().leak());
+    p.push(2, |_| AddReg::PATTERN.to_cir().leak());
+    p.push(3, |_| LdrImm::PATTERN.to_cir().leak());
 
     let t = p.finish();
 
