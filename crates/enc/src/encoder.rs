@@ -2,6 +2,8 @@ use std::marker::PhantomData;
 
 use byteorder::{ByteOrder, WriteBytesExt, BE, LE};
 
+use crate::Word;
+
 pub struct Encoder<ORDER> {
     buffer: Vec<u8>,
     _order: PhantomData<ORDER>,
@@ -33,9 +35,9 @@ impl<ORDER: ByteOrder> Encoder<ORDER> {
         }
     }
 
-    pub fn push(&mut self, data: u32) {
+    pub fn push(&mut self, word: Word) {
         self.buffer
-            .write_u32::<ORDER>(data)
+            .write_u32::<ORDER>(word.get())
             .expect("Buffer can be written to");
     }
 }
