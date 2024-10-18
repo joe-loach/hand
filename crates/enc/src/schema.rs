@@ -22,12 +22,6 @@ impl Schema {
         Self::default()
     }
 
-    pub fn cond(self) -> Self {
-        // FIXME: #3
-        // self.set(Variable::Condition, Value::Ref(2), 32, 28)
-        self.set(Variable::Condition, Condition::AL as u32, 32, 28)
-    }
-
     pub fn one(self, bit: u8) -> Self {
         self.set(Variable::One, 1, bit + 1, bit)
     }
@@ -58,6 +52,29 @@ impl Schema {
 impl Schema {
     pub(crate) fn variables(self) -> impl Iterator<Item = VariableDef> {
         self.map.into_iter()
+    }
+}
+
+pub fn cond(pos: usize, obj: &[CIR]) -> u32 {
+    let CIR::Condition(value) = obj[pos - 1] else {
+        panic!("No register at {}", pos)
+    };
+    match value {
+        Condition::EQ => 0b0000,
+        Condition::NE => 0b0001,
+        Condition::CS => 0b0010,
+        Condition::CC => 0b0011,
+        Condition::MI => 0b0100,
+        Condition::PL => 0b0101,
+        Condition::VS => 0b0110,
+        Condition::VC => 0b0111,
+        Condition::HI => 0b1000,
+        Condition::LS => 0b1001,
+        Condition::GE => 0b1010,
+        Condition::LT => 0b1011,
+        Condition::GT => 0b1100,
+        Condition::LE => 0b1101,
+        Condition::AL => 0b1110,
     }
 }
 

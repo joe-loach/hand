@@ -37,6 +37,23 @@ impl<'a> HANDCursor<'a> {
                     }
                     continue;
                 }
+                Fragment::Condition(cond) => CIR::Condition(match cond {
+                    super::Condition::EQ => cir::Condition::EQ,
+                    super::Condition::NE => cir::Condition::NE,
+                    super::Condition::CS => cir::Condition::CS,
+                    super::Condition::CC => cir::Condition::CC,
+                    super::Condition::MI => cir::Condition::MI,
+                    super::Condition::PL => cir::Condition::PL,
+                    super::Condition::VS => cir::Condition::VS,
+                    super::Condition::VC => cir::Condition::VC,
+                    super::Condition::HI => cir::Condition::HI,
+                    super::Condition::LS => cir::Condition::LS,
+                    super::Condition::GE => cir::Condition::GE,
+                    super::Condition::LT => cir::Condition::LT,
+                    super::Condition::GT => cir::Condition::GT,
+                    super::Condition::LE => cir::Condition::LE,
+                    super::Condition::AL => cir::Condition::AL,
+                }),
                 Fragment::Register(r) => CIR::Register(r),
                 Fragment::RegisterList(rl) => CIR::RegisterList(rl),
                 Fragment::Number(num) => CIR::Number(num),

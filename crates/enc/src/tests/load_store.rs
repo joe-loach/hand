@@ -9,6 +9,7 @@ impl Pattern for LdrImmPreIndex {
             Char('L'),
             Char('D'),
             Char('R'),
+            Condition(cir::Condition::AL),
             Register('t' as u32),
             PreIndexAddress,
             Register('n' as u32),
@@ -21,16 +22,16 @@ impl Pattern for LdrImmPreIndex {
 impl Encodable for LdrImmPreIndex {
     fn schema(&self, obj: &[CIR]) -> Schema {
         Schema::new()
-            .cond()
+            .set(Variable::Condition, cond(4, obj), 32, 28)
             .one(26)
             .bit(Variable::P, true, 24)
             // FIXME: check if imm12 has a '-' sign
             .bit(Variable::U, true, 23)
             .bit(Variable::W, true, 21)
             .one(20)
-            .set(Variable::Rn, reg(6, obj), 20, 16)
-            .set(Variable::Rt, reg(4, obj), 16, 12)
-            .set(Variable::Imm12, imm12(7, obj), 12, 0)
+            .set(Variable::Rn, reg(7, obj), 20, 16)
+            .set(Variable::Rt, reg(5, obj), 16, 12)
+            .set(Variable::Imm12, imm12(8, obj), 12, 0)
     }
 }
 
@@ -57,6 +58,7 @@ impl Pattern for LdrRegPreIndex {
             Char('L'),
             Char('D'),
             Char('R'),
+            Condition(cir::Condition::AL),
             Register('t' as u32),
             PreIndexAddress,
             Register('n' as u32),
@@ -71,7 +73,7 @@ impl Pattern for LdrRegPreIndex {
 impl Encodable for LdrRegPreIndex {
     fn schema(&self, obj: &[CIR]) -> Schema {
         Schema::new()
-            .cond()
+            .set(Variable::Condition, cond(4, obj), 32, 28)
             .one(26)
             .one(25)
             .bit(Variable::P, true, 24)
@@ -79,11 +81,11 @@ impl Encodable for LdrRegPreIndex {
             .bit(Variable::U, true, 23)
             .bit(Variable::W, true, 21)
             .one(20)
-            .set(Variable::Rn, reg(6, obj), 20, 16)
-            .set(Variable::Rt, reg(4, obj), 16, 12)
-            .set(Variable::Imm5, imm5(9, obj), 12, 7)
-            .set(Variable::Stype, stype(8, obj), 7, 5)
-            .set(Variable::Rm, reg(7, obj), 4, 0)
+            .set(Variable::Rn, reg(7, obj), 20, 16)
+            .set(Variable::Rt, reg(5, obj), 16, 12)
+            .set(Variable::Imm5, imm5(10, obj), 12, 7)
+            .set(Variable::Stype, stype(9, obj), 7, 5)
+            .set(Variable::Rm, reg(8, obj), 4, 0)
     }
 }
 
@@ -110,6 +112,7 @@ impl Pattern for LdrImmLit {
             Char('L'),
             Char('D'),
             Char('R'),
+            Condition(cir::Condition::AL),
             Register('t' as u32),
             Label(i32::MAX),
         ];
@@ -119,17 +122,17 @@ impl Pattern for LdrImmLit {
 
 impl Encodable for LdrImmLit {
     fn schema(&self, obj: &[CIR]) -> Schema {
-        let (label, u) = label(5, obj);
+        let (label, u) = label(6, obj);
 
         Schema::new()
-            .cond()
+            .set(Variable::Condition, cond(4, obj), 32, 28)
             .one(26)
             .bit(Variable::P, true, 24)
             .bit(Variable::U, u, 23)
             .bit(Variable::W, false, 21)
             .one(20)
             .set(Variable::Rn, 0b1111, 20, 16)
-            .set(Variable::Rt, reg(4, obj), 16, 12)
+            .set(Variable::Rt, reg(5, obj), 16, 12)
             .set(Variable::Label, label, 12, 0)
     }
 }

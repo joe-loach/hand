@@ -7,11 +7,12 @@ use parser::rowan::TextRange;
 use crate::ast::{self, AstToken};
 
 /// TODO: Use Handles to reduce size?
-/// A statement begins with [Label?, Instruction?, ..args]
+/// A statement begins with [Label?, Instruction?, Condition ..args]
 #[derive(Debug, Clone, Copy)]
 pub enum Fragment {
     Label(i32),
     Instruction(TextRange),
+    Condition(Condition),
     Register(u32),
     RegisterList(u16),
     Name(TextRange),
@@ -19,6 +20,25 @@ pub enum Fragment {
     Address(AddressKind),
     Shift(ShiftKind),
     Bang,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Condition {
+    EQ,
+    NE,
+    CS,
+    CC,
+    MI,
+    PL,
+    VS,
+    VC,
+    HI,
+    LS,
+    GE,
+    LT,
+    GT,
+    LE,
+    AL,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -62,8 +82,19 @@ pub fn lower(root: ast::Root) -> Vec<Fragment> {
         if let Some(body) = stmt.instruction() {
             let name = body.name();
             let id = name.ident().unwrap();
+            let token = id.syntax();
+            let text = token.text();
 
-            frags.push(Fragment::Instruction(id.syntax().text_range()));
+            if let Some((instr, condition)) = strip_condition(text) {
+                frags.push(Fragment::Instruction(TextRange::at(
+                    token.text_range().start(),
+                    (instr.len() as u32).into(),
+                )));
+                frags.push(Fragment::Condition(condition));
+            } else {
+                frags.push(Fragment::Instruction(token.text_range()));
+                frags.push(Fragment::Condition(Condition::AL));
+            }
 
             for item in body.args().iter() {
                 let kind = item.kind();
@@ -96,6 +127,44 @@ pub fn lower(root: ast::Root) -> Vec<Fragment> {
     }
 
     frags
+}
+
+fn strip_condition(instruction: &str) -> Option<(&str, Condition)> {
+    // taken from `std::str::pattern` which is not yet stable
+    // these functions are perfectly fine however
+
+    fn is_suffix_of(a: &str, b: &str) -> bool {
+        a.as_bytes().ends_with(b.as_bytes())
+    }
+
+    #[inline]
+    fn strip_suffix_of<'a>(a: &str, b: &'a str) -> Option<&'a str> {
+        if is_suffix_of(a, b) {
+            let i = b.len() - a.as_bytes().len();
+            // SAFETY: suffix was just verified to exist.
+            unsafe { Some(b.get_unchecked(..i)) }
+        } else {
+            None
+        }
+    }
+
+    strip_suffix_of("EQ", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("NE", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("CS", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("CC", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("MI", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("PL", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("VS", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("VC", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("HI", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("LS", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("GE", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("LT", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("GT", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("LE", instruction).map(|instr| (instr, Condition::EQ))?;
+    strip_suffix_of("AL", instruction).map(|instr| (instr, Condition::EQ))?;
+    // no suffix found
+    None
 }
 
 /// Address Register Offset?
