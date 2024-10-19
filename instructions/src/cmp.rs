@@ -1,9 +1,10 @@
 use crate::*;
 
-/// Branch causes a branch to a target address.
-pub struct Cmp;
+/// Compare (immediate) subtracts an immediate value from a register value.
+/// It updates the condition flags based on the result, and discards the result.
+pub struct CmpImm;
 
-impl Pattern for Cmp {
+impl Pattern for CmpImm {
     fn pattern(&self) -> &[CIR] {
         use CIR::*;
         static PATTERN: &[CIR] = &[
@@ -18,7 +19,7 @@ impl Pattern for Cmp {
     }
 }
 
-impl Encodable for Cmp {
+impl Encodable for CmpImm {
     fn schema(&self, obj: &[CIR]) -> Schema {
         Schema::new()
             .set(Variable::Condition, cond(4, obj), 32, 28)
