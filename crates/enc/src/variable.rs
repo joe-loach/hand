@@ -15,6 +15,8 @@ pub enum Variable {
     Rt,
     /// Rd
     Rd,
+    /// Rs
+    Rs,
     /// registers
     RegisterList,
     /// S
