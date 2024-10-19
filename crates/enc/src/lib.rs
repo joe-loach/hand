@@ -10,8 +10,8 @@ mod variable;
 pub use encoder::Encoder;
 use matcher::Pattern;
 pub use schema::*;
-pub use word::Word;
 pub use variable::Variable;
+pub use word::Word;
 
 use cir::CIR;
 
