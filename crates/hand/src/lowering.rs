@@ -210,7 +210,7 @@ fn lower_shift(frags: &mut Vec<Fragment>, shift: Option<ast::Shift>) {
             }
             ast::ShiftKind::RRX => {
                 frags.push(Fragment::Shift(ShiftKind::RRX));
-                lower_amount(frags, None)
+                frags.push(Fragment::Number(0x0));
             }
         }
     }
