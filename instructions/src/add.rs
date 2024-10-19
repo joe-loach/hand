@@ -1,6 +1,4 @@
-use cir::CIR;
-use enc::*;
-use matcher::Pattern;
+use crate::*;
 
 pub enum Add {
     Imm(AddImm),
