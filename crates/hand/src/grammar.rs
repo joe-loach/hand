@@ -150,11 +150,17 @@ fn register_list(p: &mut Parser) {
                 }
             },
             Comma => {
-                group = PartialGroup::None;
+                match mem::replace(&mut group, PartialGroup::None) {
+                    PartialGroup::None => (),
+                    PartialGroup::Reg(m) | PartialGroup::RegAnd(m) => m.abandon(),
+                }
                 punct(p);
             }
             _ => {
-                group = PartialGroup::None;
+                match mem::replace(&mut group, PartialGroup::None) {
+                    PartialGroup::None => (),
+                    PartialGroup::Reg(m) | PartialGroup::RegAnd(m) => m.abandon(),
+                }
                 unexpected(p)
             }
         }
