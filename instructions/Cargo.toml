@@ -1,0 +1,10 @@
+[package]
+name = "instructions"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cir = { path = "../crates/cir" }
+enc = { path = "../crates/enc" }
+hand = { path = "../crates/hand" }
+matcher = { path = "../crates/matcher" }

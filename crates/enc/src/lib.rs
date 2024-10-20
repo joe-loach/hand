@@ -5,11 +5,12 @@ mod encoder;
 mod schema;
 mod word;
 
-pub mod variable;
+mod variable;
 
 pub use encoder::Encoder;
 use matcher::Pattern;
 pub use schema::*;
+pub use variable::Variable;
 pub use word::Word;
 
 use cir::CIR;

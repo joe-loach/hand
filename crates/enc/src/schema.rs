@@ -26,6 +26,14 @@ impl Schema {
         self.set(Variable::One, 1, bit + 1, bit)
     }
 
+    pub fn flag_bit(self, value: bool, bit: u8) -> Self {
+        if value {
+            self.one(bit)
+        } else {
+            self
+        }
+    }
+
     pub fn bit(mut self, name: Variable, value: bool, bit: u8) -> Self {
         if value {
             self.map.insert(VariableDef {
