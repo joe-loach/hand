@@ -60,6 +60,7 @@ fn impl_pattern(
     }
 
     Ok(quote! {
+        #[automatically_derived]
         impl ::matcher::ConstPattern for #name {
             const PATTERN: &[::matcher::Pattern] = &[ #(#tokens),* ];
         }
