@@ -8,32 +8,36 @@ pub enum Add {
 
 /// `Add (immediate)` adds an immediate value to a register value,
 /// and writes the result to the destination register.
-pub struct AddImm;
+#[derive(Pattern)]
+#[name = "ADD"]
+pub struct AddImm(Condition, Register<D>, Register<N>, Number<12>);
 
 /// `Add (register)`` adds a register value and an optionally-shifted register value,
 /// and writes the result to the destination register.
-pub struct AddReg;
+#[derive(Pattern)]
+#[name = "ADD"]
+pub struct AddReg(
+    Condition,
+    Register<D>,
+    Register<N>,
+    Register<M>,
+    Shift,
+    Number<5>,
+);
 
 /// `Add (register-shifted register)` adds a register value and a register-shifted register value.
 /// It writes the result to the destination register,
 /// and can optionally update the condition flags based on the result.
-pub struct AddRegShiftReg;
-
-impl Pattern for AddImm {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('A'),
-            Char('D'),
-            Char('D'),
-            Condition(cir::Condition::AL),
-            Register('d' as u32),
-            Register('n' as u32),
-            Number(u32::MAX),
-        ];
-        PATTERN
-    }
-}
+#[derive(Pattern)]
+#[name = "ADD"]
+pub struct AddRegShiftReg(
+    Condition,
+    Register<D>,
+    Register<N>,
+    Register<M>,
+    Shift,
+    Register<S>,
+);
 
 impl Encodable for AddImm {
     fn schema(&self, obj: &[CIR]) -> Schema {
@@ -45,24 +49,6 @@ impl Encodable for AddImm {
             .set(Variable::Rn, reg(6, obj), 20, 16)
             .set(Variable::Rd, reg(5, obj), 16, 12)
             .set(Variable::Imm12, imm12(7, obj), 12, 0)
-    }
-}
-
-impl Pattern for AddReg {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('A'),
-            Char('D'),
-            Char('D'),
-            Condition(cir::Condition::AL),
-            Register('d' as u32),
-            Register('n' as u32),
-            Register('m' as u32),
-            Shift(cir::Shift::LSL),
-            Number(u32::MAX),
-        ];
-        PATTERN
     }
 }
 
@@ -80,24 +66,6 @@ impl Encodable for AddReg {
     }
 }
 
-impl Pattern for AddRegShiftReg {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('A'),
-            Char('D'),
-            Char('D'),
-            Condition(cir::Condition::AL),
-            Register('d' as u32),
-            Register('n' as u32),
-            Register('m' as u32),
-            Shift(cir::Shift::LSL),
-            Register('s' as u32),
-        ];
-        PATTERN
-    }
-}
-
 impl Encodable for AddRegShiftReg {
     fn schema(&self, obj: &[CIR]) -> Schema {
         Schema::new()
@@ -112,4 +80,3 @@ impl Encodable for AddRegShiftReg {
             .set(Variable::Rm, reg(7, obj), 4, 0)
     }
 }
-

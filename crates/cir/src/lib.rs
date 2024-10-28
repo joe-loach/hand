@@ -1,11 +1,12 @@
 //! Common Immediate Representation
 
+pub mod structured;
+
 pub trait Convert {
     fn to_cir(&self) -> Vec<CIR>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, kinded::Kinded)]
-#[kinded(derive(PartialOrd, Ord, Hash))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CIR {
     Char(char),
     Register(u32),

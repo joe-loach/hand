@@ -7,4 +7,4 @@ edition = "2021"
 cir = { path = "../crates/cir" }
 enc = { path = "../crates/enc" }
 hand = { path = "../crates/hand" }
-matcher = { path = "../crates/matcher" }
+matcher = { path = "../crates/matcher", features = ["derive"] }

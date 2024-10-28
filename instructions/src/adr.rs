@@ -2,22 +2,9 @@ use crate::*;
 
 /// Form PC-relative address adds an immediate value to the PC value to form a PC-relative address,
 /// and writes the result to the destination register.
-pub struct Adr;
-
-impl Pattern for Adr {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('A'),
-            Char('D'),
-            Char('R'),
-            Condition(cir::Condition::AL),
-            Register('d' as u32),
-            Label(i32::MAX)
-        ];
-        PATTERN
-    }
-}
+#[derive(Pattern)]
+#[name = "ADR"]
+pub struct Adr(Condition, Register<D>, Label);
 
 impl Encodable for Adr {
     fn schema(&self, obj: &[CIR]) -> Schema {

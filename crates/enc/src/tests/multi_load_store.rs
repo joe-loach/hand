@@ -1,20 +1,20 @@
+use matcher::{
+    pattern, ConstPattern, Pattern::{self, *}
+};
+
 use super::*;
 
 struct Ldm;
 
-impl Pattern for Ldm {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('L'),
-            Char('D'),
-            Char('M'),
-            Condition(cir::Condition::AL),
-            Register('n' as u32),
-            RegisterList(u16::MAX),
-        ];
-        PATTERN
-    }
+impl ConstPattern for Ldm {
+    const PATTERN: &[Pattern] = &[
+        Char('L'),
+        Char('D'),
+        Char('M'),
+        Condition,
+        Register,
+        RegisterList,
+    ];
 }
 
 impl Encodable for Ldm {
@@ -32,14 +32,16 @@ impl Encodable for Ldm {
 
 #[test]
 fn ldm() {
-    let matcher = single_pattern(Box::new(Ldm));
+    let encodable = Box::new(Ldm);
+    let matcher = single_pattern(encodable.as_ref());
 
     let text = "LDM r0, {r1}".into();
     let hand = hand::parse(text);
-    let hand_cir = hand.to_cir();
-    let pair = matcher::match_pair(&matcher, &hand_cir).expect("Correct pattern");
+    let cir = hand.to_cir();
+    let pattern = pattern::from_cir(&cir);
+    let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
 
-    let bits = encode_instruction(pair.value().as_ref(), pair.matched());
+    let bits = encode_instruction(*pair.value(), &cir);
 
     assert_eq!(bits, Word(0b1110_1000_1001_0000_0000_0000_0000_0010));
 }

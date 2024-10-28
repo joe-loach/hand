@@ -1,21 +1,19 @@
+use matcher::{pattern, ConstPattern, Pattern::{self, *}};
+
 use super::*;
 
 struct AddImm;
 
-impl Pattern for AddImm {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('A'),
-            Char('D'),
-            Char('D'),
-            Condition(cir::Condition::AL),
-            Register('d' as u32),
-            Register('n' as u32),
-            Number(u32::MAX),
-        ];
-        PATTERN
-    }
+impl ConstPattern for AddImm {
+    const PATTERN: &[Pattern] = &[
+        Char('A'),
+        Char('D'),
+        Char('D'),
+        Condition,
+        Register,
+        Register,
+        Number,
+    ];
 }
 
 impl Encodable for AddImm {
@@ -33,14 +31,16 @@ impl Encodable for AddImm {
 
 #[test]
 fn add_imm() {
-    let matcher = single_pattern(Box::new(AddImm));
+    let encodable = Box::new(AddImm);
+    let matcher = single_pattern(encodable.as_ref());
 
     let text = "ADD r0, r0, #0".into();
     let hand = hand::parse(text);
-    let hand_cir = hand.to_cir();
-    let pair = matcher::match_pair(&matcher, &hand_cir).expect("Correct pattern");
+    let cir = hand.to_cir();
+    let pattern = pattern::from_cir(&cir);
+    let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
 
-    let bits = encode_instruction(pair.value().as_ref(), pair.matched());
+    let bits = encode_instruction(*pair.value(), &cir);
 
     assert_eq!(bits, Word(0b1110_0010_1000_0000_0000_0000_0000_0000));
 }

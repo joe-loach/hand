@@ -1,22 +1,20 @@
+use matcher::{pattern, ConstPattern, Pattern::{self, *}};
+
 use super::*;
 
 struct LdrImmPreIndex;
 
-impl Pattern for LdrImmPreIndex {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('L'),
-            Char('D'),
-            Char('R'),
-            Condition(cir::Condition::AL),
-            Register('t' as u32),
-            PreIndexAddress,
-            Register('n' as u32),
-            Number(u32::MAX),
-        ];
-        PATTERN
-    }
+impl ConstPattern for LdrImmPreIndex {
+    const PATTERN: &[Pattern] = &[
+        Char('L'),
+        Char('D'),
+        Char('R'),
+        Condition,
+        Register,
+        PreIndexAddress,
+        Register,
+        Number,
+    ];
 }
 
 impl Encodable for LdrImmPreIndex {
@@ -37,37 +35,35 @@ impl Encodable for LdrImmPreIndex {
 
 #[test]
 fn ldr_imm_preidx() {
-    let matcher = single_pattern(Box::new(LdrImmPreIndex));
+    let encodable = Box::new(LdrImmPreIndex);
+    let matcher = single_pattern(encodable.as_ref());
 
     let text = "LDR r0, [r1, #1]!".into();
     let hand = hand::parse(text);
-    let hand_cir = hand.to_cir();
-    let pair = matcher::match_pair(&matcher, &hand_cir).expect("Correct pattern");
+    let cir = hand.to_cir();
+    let pattern = pattern::from_cir(&cir);
+    let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
 
-    let bits = encode_instruction(pair.value().as_ref(), pair.matched());
+    let bits = encode_instruction(*pair.value(), &cir);
 
     assert_eq!(bits, Word(0b1110_0101_1011_0001_0000_0000_0000_0001));
 }
 
 struct LdrRegPreIndex;
 
-impl Pattern for LdrRegPreIndex {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('L'),
-            Char('D'),
-            Char('R'),
-            Condition(cir::Condition::AL),
-            Register('t' as u32),
-            PreIndexAddress,
-            Register('n' as u32),
-            Register('m' as u32),
-            Shift(cir::Shift::LSL),
-            Number(u32::MAX),
-        ];
-        PATTERN
-    }
+impl ConstPattern for LdrRegPreIndex {
+    const PATTERN: &[Pattern] = &[
+        Char('L'),
+        Char('D'),
+        Char('R'),
+        Condition,
+        Register,
+        PreIndexAddress,
+        Register,
+        Register,
+        Shift,
+        Number,
+    ];
 }
 
 impl Encodable for LdrRegPreIndex {
@@ -91,33 +87,31 @@ impl Encodable for LdrRegPreIndex {
 
 #[test]
 fn ldr_reg_preidx() {
-    let matcher = single_pattern(Box::new(LdrRegPreIndex));
+    let encodable = Box::new(LdrRegPreIndex);
+    let matcher = single_pattern(encodable.as_ref());
 
     let text = "LDR r0, [r1, r2, LSL #1]!".into();
     let hand = hand::parse(text);
-    let hand_cir = hand.to_cir();
-    let pair = matcher::match_pair(&matcher, &hand_cir).expect("Correct pattern");
+    let cir = hand.to_cir();
+    let pattern = pattern::from_cir(&cir);
+    let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
 
-    let bits = encode_instruction(pair.value().as_ref(), pair.matched());
+    let bits = encode_instruction(*pair.value(), &cir);
 
     assert_eq!(bits, Word(0b1110_0111_1011_0001_0000_0000_1000_0010));
 }
 
 struct LdrImmLit;
 
-impl Pattern for LdrImmLit {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('L'),
-            Char('D'),
-            Char('R'),
-            Condition(cir::Condition::AL),
-            Register('t' as u32),
-            Label(i32::MAX),
-        ];
-        PATTERN
-    }
+impl ConstPattern for LdrImmLit {
+    const PATTERN: &[Pattern] = &[
+        Char('L'),
+        Char('D'),
+        Char('R'),
+        Condition,
+        Register,
+        Label,
+    ];
 }
 
 impl Encodable for LdrImmLit {
@@ -139,14 +133,16 @@ impl Encodable for LdrImmLit {
 
 #[test]
 fn ldr_imm_lit() {
-    let matcher = single_pattern(Box::new(LdrImmLit));
+    let encodable = Box::new(LdrImmLit);
+    let matcher = single_pattern(encodable.as_ref());
 
     let text = "label: LDR r0, label".into();
     let hand = hand::parse(text);
-    let hand_cir = hand.to_cir();
-    let pair = matcher::match_pair(&matcher, &hand_cir).expect("pattern exists!");
+    let cir = hand.to_cir();
+    let pattern = pattern::from_cir(&cir);
+    let pair = matcher::match_pair(&matcher, &pattern).expect("pattern exists!");
 
-    let bits = encode_instruction(pair.value().as_ref(), pair.matched());
+    let bits = encode_instruction(*pair.value(), &cir);
 
     assert_eq!(bits, Word(0b1110_0101_0001_1111_0000_0000_0000_1000));
 }

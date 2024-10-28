@@ -2,76 +2,70 @@ use super::*;
 
 #[test]
 pub(crate) fn api() {
+    use crate::Pattern::*;
     use cir::Convert;
 
     struct AddImm;
 
-    impl Pattern for AddImm {
-        fn pattern(&self) -> &[CIR] {
-            use CIR::*;
-            static PATTERN: &[CIR] = &[
-                Char('A'),
-                Char('D'),
-                Char('D'),
-                Register('d' as u32),
-                Register('n' as u32),
-                Number(u32::MAX),
-            ];
-            PATTERN
-        }
+    impl ConstPattern for AddImm {
+        const PATTERN: &[Pattern] = &[
+            Char('A'),
+            Char('D'),
+            Char('D'),
+            Condition,
+            Register,
+            Register,
+            Number,
+        ];
     }
 
     struct AddReg;
 
-    impl Pattern for AddReg {
-        fn pattern(&self) -> &[CIR] {
-            use CIR::*;
-            static PATTERN: &[CIR] = &[
-                Char('A'),
-                Char('D'),
-                Char('D'),
-                Register('d' as u32),
-                Register('n' as u32),
-                Register('m' as u32),
-            ];
-            PATTERN
-        }
+    impl ConstPattern for AddReg {
+        const PATTERN: &[Pattern] = &[
+            Char('A'),
+            Char('D'),
+            Char('D'),
+            Condition,
+            Register,
+            Register,
+            Register,
+        ];
     }
 
     struct LdrImm;
 
-    impl Pattern for LdrImm {
-        fn pattern(&self) -> &[CIR] {
-            use CIR::*;
-            static PATTERN: &[CIR] = &[
-                Char('L'),
-                Char('D'),
-                Char('R'),
-                Register('t' as u32),
-                OffsetAddress,
-                Register('n' as u32),
-                Number(u32::MAX),
-            ];
-            PATTERN
-        }
+    impl ConstPattern for LdrImm {
+        const PATTERN: &[Pattern] = &[
+            Char('L'),
+            Char('D'),
+            Char('R'),
+            Condition,
+            Register,
+            OffsetAddress,
+            Register,
+            Number,
+        ];
     }
 
     let mut p = Patterns::new();
-    p.push(1, |_| AddImm.pattern());
-    p.push(2, |_| AddReg.pattern());
-    p.push(3, |_| LdrImm.pattern());
+    p.push(1, AddImm.pattern());
+    p.push(2, AddReg.pattern());
+    p.push(3, LdrImm.pattern());
 
-    let t = p.finish();
+    let matcher = p.finish();
 
     let text = "ADD r0, r1, #10".into();
     let hand = hand::parse(text);
-    let pattern = t.find_match(&hand.to_cir()).expect("pattern exists!");
+    let pattern = pattern::from_cir(&hand.to_cir());
+    let pair = match_pair(&matcher, &pattern).expect("Failed to match pair");
 
-    assert_eq!(*pattern, 1);
+    assert_eq!(*pair.value(), 1);
 
     let text = "LDR r0, [r1, #1]".into();
     let hand = hand::parse(text);
-    let pattern = t.find_match(&hand.to_cir()).expect("pattern exists!");
+    let pattern = pattern::from_cir(&hand.to_cir());
+    let pair = match_pair(&matcher, &pattern).expect("Failed to match pair");
 
-    assert_eq!(*pattern, 3);
+    assert_eq!(*pair.value(), 3);
 }

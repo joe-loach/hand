@@ -1,19 +1,9 @@
 use crate::*;
 
 /// Branch causes a branch to a target address.
-pub struct B;
-
-impl Pattern for B {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('B'),
-            Condition(cir::Condition::AL),
-            Label(i32::MAX)
-        ];
-        PATTERN
-    }
-}
+#[derive(Pattern)]
+#[name = "B"]
+pub struct B(Condition, Label);
 
 impl Encodable for B {
     fn schema(&self, obj: &[CIR]) -> Schema {

@@ -8,14 +8,14 @@ mod word;
 mod variable;
 
 pub use encoder::Encoder;
-use matcher::Pattern;
+use matcher::HasPattern;
 pub use schema::*;
 pub use variable::Variable;
 pub use word::Word;
 
 use cir::CIR;
 
-pub trait Encodable: Pattern {
+pub trait Encodable: HasPattern {
     fn schema(&self, obj: &[CIR]) -> Schema;
 }
 

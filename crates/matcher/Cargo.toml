@@ -5,9 +5,13 @@ edition = "2021"
 
 [dependencies]
 cir = { path = "../cir" }
+pattern-derive = { path = "../pattern-derive", optional = true }
 
 trie-rs = "0.4.2"
 modular-bitfield = "0.11.2"
 
 [dev-dependencies]
 hand = { path = "../hand" }
+
+[features]
+derive = ["pattern-derive"]

@@ -2,22 +2,9 @@ use crate::*;
 
 /// Compare (immediate) subtracts an immediate value from a register value.
 /// It updates the condition flags based on the result, and discards the result.
-pub struct CmpImm;
-
-impl Pattern for CmpImm {
-    fn pattern(&self) -> &[CIR] {
-        use CIR::*;
-        static PATTERN: &[CIR] = &[
-            Char('C'),
-            Char('M'),
-            Char('P'),
-            Condition(cir::Condition::AL),
-            Register('n' as u32),
-            Number(u32::MAX),
-        ];
-        PATTERN
-    }
-}
+#[derive(Pattern)]
+#[name = "CMP"]
+pub struct CmpImm(Register<N>, Number<12>);
 
 impl Encodable for CmpImm {
     fn schema(&self, obj: &[CIR]) -> Schema {
