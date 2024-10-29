@@ -51,23 +51,25 @@ fn impl_pattern(
     name_attr: Option<String>,
     fields: &mut dyn Iterator<Item = &Field>,
 ) -> Result<TokenStream, (Span, String)> {
-    let mut tokens = fields.map(pattern_token).collect::<Vec<_>>();
+    let module = crate::crate_name();
+
+    let mut tokens = fields.map(|f| pattern_token(&module, f)).collect::<Vec<_>>();
 
     if let Some(name_attr) = name_attr {
         for c in name_attr.chars().rev() {
-            tokens.insert(0, quote! { ::matcher::Pattern::Char(#c) });
+            tokens.insert(0, quote! { #module::Pattern::Char(#c) });
         }
     }
 
     Ok(quote! {
         #[automatically_derived]
-        impl ::matcher::ConstPattern for #name {
-            const PATTERN: &[::matcher::Pattern] = &[ #(#tokens),* ];
+        impl #module::ConstPattern for #name {
+            const PATTERN: &[#module::Pattern] = &[ #(#tokens),* ];
         }
     })
 }
 
-fn pattern_token(field: &Field) -> TokenStream {
+fn pattern_token(module: &TokenStream, field: &Field) -> TokenStream {
     let ty = &field.ty;
-    quote! { <#ty as ::matcher::PatternToken>::TOKEN }
+    quote! { <#ty as #module::PatternToken>::TOKEN }
 }

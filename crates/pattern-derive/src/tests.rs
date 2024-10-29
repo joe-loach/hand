@@ -62,8 +62,9 @@ test! {
         #[derive(Debug)]
         struct Unit;
     } expands to {
-        impl ::matcher::ConstPattern for Unit {
-            const PATTERN: &[::matcher::Pattern] = &[];
+        #[automatically_derived]
+        impl matcher::ConstPattern for Unit {
+            const PATTERN: &[matcher::Pattern] = &[];
         }
     }
 }
@@ -73,8 +74,9 @@ test! {
         #[derive(Debug)]
         pub struct Vis;
     } expands to {
-        impl ::matcher::ConstPattern for Vis {
-            const PATTERN: &[::matcher::Pattern] = &[];
+        #[automatically_derived]
+        impl matcher::ConstPattern for Vis {
+            const PATTERN: &[matcher::Pattern] = &[];
         }
     }
 }
@@ -83,10 +85,11 @@ test! {
     struct_tuple {
         pub struct Tuple(Condition, Label);
     } expands to {
-        impl ::matcher::ConstPattern for Tuple {
-            const PATTERN: &[::matcher::Pattern] = &[
-                <Condition as ::matcher::PatternToken>::TOKEN,
-                <Label as ::matcher::PatternToken>::TOKEN,
+        #[automatically_derived]
+        impl matcher::ConstPattern for Tuple {
+            const PATTERN: &[matcher::Pattern] = &[
+                <Condition as matcher::PatternToken>::TOKEN,
+                <Label as matcher::PatternToken>::TOKEN,
             ];
         }
     }
@@ -101,12 +104,13 @@ test! {
             imm12: Number<12>,
         }
     } expands to {
-        impl ::matcher::ConstPattern for Named {
-            const PATTERN: &[::matcher::Pattern] = &[
-                <Condition as ::matcher::PatternToken>::TOKEN,
-                <Register<D> as ::matcher::PatternToken>::TOKEN,
-                <Register<N> as ::matcher::PatternToken>::TOKEN,
-                <Number<12> as ::matcher::PatternToken>::TOKEN,
+        #[automatically_derived]
+        impl matcher::ConstPattern for Named {
+            const PATTERN: &[matcher::Pattern] = &[
+                <Condition as matcher::PatternToken>::TOKEN,
+                <Register<D> as matcher::PatternToken>::TOKEN,
+                <Register<N> as matcher::PatternToken>::TOKEN,
+                <Number<12> as matcher::PatternToken>::TOKEN,
             ];
         }
     }
