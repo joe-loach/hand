@@ -5,5 +5,5 @@ mod cmp;
 
 use enc::*;
 
-use cir::{structured::*, CIR};
+use cir::structured::*;
 use matcher::Pattern;

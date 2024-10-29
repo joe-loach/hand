@@ -7,16 +7,9 @@ use crate::*;
 pub struct Adr(Condition, Register<D>, Label);
 
 impl Encodable for Adr {
-    fn schema(&self, obj: &[CIR]) -> Schema {
-        let (label, negative) = label(6, obj);
-
-        Schema::new()
-            .set(Variable::Condition, cond(4, obj), 32, 28)
-            .one(25)
-            .flag_bit(!negative, 23)
-            .flag_bit(negative, 22)
-            .set(Variable::Rn, 0b1111, 20, 16)
-            .set(Variable::Rd, reg(5, obj), 16, 12)
-            .set(Variable::Label, label, 12, 0)
+    fn encode(&self) -> Word {
+        let Self(cond, rd, Label(address, _)) = self;
+        let imm12 = Number::<12>(*address);
+        encode![cond | 0 0 1 0 | 1 0 0 | 0 | 1 1 1 1 | rd | imm12]
     }
 }

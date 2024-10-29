@@ -6,19 +6,15 @@ use crate::*;
 pub struct B(Condition, Label);
 
 impl Encodable for B {
-    fn schema(&self, obj: &[CIR]) -> Schema {
-        let (label, negative) = label(3, obj);
-        let label = label / 4;
-        let label = if negative {
-            label.wrapping_neg()
+    fn encode(&self) -> Word {
+        let Self(cond, Label(address, negative)) = self;
+        let address = address / 4;
+        let address = if *negative {
+            address.wrapping_neg()
         } else {
-            label
+            address
         };
-
-        Schema::new()
-            .set(Variable::Condition, cond(2, obj), 32, 28)
-            .one(27)
-            .one(25)
-            .set(Variable::Label, label, 24, 0)
+        let imm24 = Number::<24>(address);
+        encode![cond | 1 0 1 | 0 | imm24]
     }
 }
