@@ -1,47 +1,23 @@
-use matcher::{
-    pattern, ConstPattern, Pattern::{self, *}
-};
+use structured::*;
 
 use super::*;
 
-struct Ldm;
+#[derive(Pattern)]
+#[name = "LDM"]
+struct Ldm(Condition, Register<N>, RegisterList);
 
-impl ConstPattern for Ldm {
-    const PATTERN: &[Pattern] = &[
-        Char('L'),
-        Char('D'),
-        Char('M'),
-        Condition,
-        Register,
-        RegisterList,
-    ];
-}
-
-impl Encodable for Ldm {
-    fn schema(&self, obj: &[CIR]) -> Schema {
-        Schema::new()
-            .set(Variable::Condition, cond(4, obj), 32, 28)
-            .one(27)
-            .one(23)
-            .bit(Variable::W, false, 21)
-            .one(20)
-            .set(Variable::Rn, reg(5, obj), 20, 16)
-            .set(Variable::RegisterList, register_list(6, obj), 16, 0)
+impl structured::Parse for Ldm {
+    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
+        Some(Self(buffer.parse()?, buffer.parse()?, buffer.parse()?))
     }
 }
 
-#[test]
-fn ldm() {
-    let encodable = Box::new(Ldm);
-    let matcher = single_pattern(encodable.as_ref());
-
-    let text = "LDM r0, {r1}".into();
-    let hand = hand::parse(text);
-    let cir = hand.to_cir();
-    let pattern = pattern::from_cir(&cir);
-    let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
-
-    let bits = encode_instruction(*pair.value(), &cir);
-
-    assert_eq!(bits, Word(0b1110_1000_1001_0000_0000_0000_0000_0010));
+impl Encodable for Ldm {
+    fn encode(&self) -> Word {
+        let Self(cond, rn, register_list) = self;
+        let w = 0;
+        encode![cond | 1 0 0 | 0 | 1 | 0 | w | 1 | rn | register_list]
+    }
 }
+
+macros::test_encoding!(ldm of Ldm; "LDM r0, {r1}" => 0b1110_1000_1001_0000_0000_0000_0000_0010);

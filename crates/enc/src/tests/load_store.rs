@@ -1,148 +1,97 @@
-use matcher::{pattern, ConstPattern, Pattern::{self, *}};
+use structured::*;
 
 use super::*;
 
-struct LdrImmPreIndex;
+#[derive(Pattern)]
+#[name = "LDR"]
+struct LdrImmPreIndex(
+    Condition,
+    Register<T>,
+    Address<PreIndex>,
+    Register<N>,
+    Number<12>,
+);
 
-impl ConstPattern for LdrImmPreIndex {
-    const PATTERN: &[Pattern] = &[
-        Char('L'),
-        Char('D'),
-        Char('R'),
-        Condition,
-        Register,
-        PreIndexAddress,
-        Register,
-        Number,
-    ];
+impl structured::Parse for LdrImmPreIndex {
+    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
+        Some(Self(
+            buffer.parse()?,
+            buffer.parse()?,
+            buffer.parse()?,
+            buffer.parse()?,
+            buffer.parse()?,
+        ))
+    }
 }
 
 impl Encodable for LdrImmPreIndex {
-    fn schema(&self, obj: &[CIR]) -> Schema {
-        Schema::new()
-            .set(Variable::Condition, cond(4, obj), 32, 28)
-            .one(26)
-            .bit(Variable::P, true, 24)
-            // FIXME: check if imm12 has a '-' sign
-            .bit(Variable::U, true, 23)
-            .bit(Variable::W, true, 21)
-            .one(20)
-            .set(Variable::Rn, reg(7, obj), 20, 16)
-            .set(Variable::Rt, reg(5, obj), 16, 12)
-            .set(Variable::Imm12, imm12(8, obj), 12, 0)
+    fn encode(&self) -> Word {
+        let Self(cond, rt, _, rn, imm12) = self;
+        let p = 1;
+        let w = 1;
+        let u = true;
+        encode![cond | 0 1 0 | p | u | 0 | w | 1 | rn | rt | imm12]
     }
 }
 
-#[test]
-fn ldr_imm_preidx() {
-    let encodable = Box::new(LdrImmPreIndex);
-    let matcher = single_pattern(encodable.as_ref());
+macros::test_encoding!(ldr_imm_preidx of LdrImmPreIndex; "LDR r0, [r1, #1]!" => 0b1110_0101_1011_0001_0000_0000_0000_0001);
 
-    let text = "LDR r0, [r1, #1]!".into();
-    let hand = hand::parse(text);
-    let cir = hand.to_cir();
-    let pattern = pattern::from_cir(&cir);
-    let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
+#[derive(Pattern)]
+#[name = "LDR"]
+struct LdrRegPreIndex(
+    Condition,
+    Register<T>,
+    Address<PreIndex>,
+    Register<N>,
+    Register<M>,
+    Shift,
+    Number<5>,
+);
 
-    let bits = encode_instruction(*pair.value(), &cir);
-
-    assert_eq!(bits, Word(0b1110_0101_1011_0001_0000_0000_0000_0001));
-}
-
-struct LdrRegPreIndex;
-
-impl ConstPattern for LdrRegPreIndex {
-    const PATTERN: &[Pattern] = &[
-        Char('L'),
-        Char('D'),
-        Char('R'),
-        Condition,
-        Register,
-        PreIndexAddress,
-        Register,
-        Register,
-        Shift,
-        Number,
-    ];
+impl structured::Parse for LdrRegPreIndex {
+    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
+        Some(Self(
+            buffer.parse()?,
+            buffer.parse()?,
+            buffer.parse()?,
+            buffer.parse()?,
+            buffer.parse()?,
+            buffer.parse()?,
+            buffer.parse()?,
+        ))
+    }
 }
 
 impl Encodable for LdrRegPreIndex {
-    fn schema(&self, obj: &[CIR]) -> Schema {
-        Schema::new()
-            .set(Variable::Condition, cond(4, obj), 32, 28)
-            .one(26)
-            .one(25)
-            .bit(Variable::P, true, 24)
-            // FIXME: check if imm12 has a '-' sign
-            .bit(Variable::U, true, 23)
-            .bit(Variable::W, true, 21)
-            .one(20)
-            .set(Variable::Rn, reg(7, obj), 20, 16)
-            .set(Variable::Rt, reg(5, obj), 16, 12)
-            .set(Variable::Imm5, imm5(10, obj), 12, 7)
-            .set(Variable::Stype, stype(9, obj), 7, 5)
-            .set(Variable::Rm, reg(8, obj), 4, 0)
+    fn encode(&self) -> Word {
+        let Self(cond, rt, _, rn, rm, stype, imm5) = self;
+        let p = 1;
+        let w = 1;
+        let u = 1;
+        encode![cond | 0 1 1 | p | u | 0 | w | 1 | rn | rt | imm5 | stype | 0 | rm]
     }
 }
 
-#[test]
-fn ldr_reg_preidx() {
-    let encodable = Box::new(LdrRegPreIndex);
-    let matcher = single_pattern(encodable.as_ref());
+macros::test_encoding!(ldr_reg_preidx of LdrRegPreIndex; "LDR r0, [r1, r2, LSL #1]!" => 0b1110_0111_1011_0001_0000_0000_1000_0010);
 
-    let text = "LDR r0, [r1, r2, LSL #1]!".into();
-    let hand = hand::parse(text);
-    let cir = hand.to_cir();
-    let pattern = pattern::from_cir(&cir);
-    let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
+#[derive(Pattern)]
+#[name = "LDR"]
+struct LdrImmLit(Condition, Register<T>, Label);
 
-    let bits = encode_instruction(*pair.value(), &cir);
-
-    assert_eq!(bits, Word(0b1110_0111_1011_0001_0000_0000_1000_0010));
-}
-
-struct LdrImmLit;
-
-impl ConstPattern for LdrImmLit {
-    const PATTERN: &[Pattern] = &[
-        Char('L'),
-        Char('D'),
-        Char('R'),
-        Condition,
-        Register,
-        Label,
-    ];
+impl structured::Parse for LdrImmLit {
+    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
+        Some(Self(buffer.parse()?, buffer.parse()?, buffer.parse()?))
+    }
 }
 
 impl Encodable for LdrImmLit {
-    fn schema(&self, obj: &[CIR]) -> Schema {
-        let (label, u) = label(6, obj);
-
-        Schema::new()
-            .set(Variable::Condition, cond(4, obj), 32, 28)
-            .one(26)
-            .bit(Variable::P, true, 24)
-            .bit(Variable::U, u, 23)
-            .bit(Variable::W, false, 21)
-            .one(20)
-            .set(Variable::Rn, 0b1111, 20, 16)
-            .set(Variable::Rt, reg(5, obj), 16, 12)
-            .set(Variable::Label, label, 12, 0)
+    fn encode(&self) -> Word {
+        let Self(cond, rt, Label(address, u)) = self;
+        let p = 1;
+        let w = 0;
+        let imm12 = Number::<12>(*address);
+        encode![cond | 0 1 0 | p | u | 0 | w | 1 | 1 1 1 1 | rt | imm12]
     }
 }
 
-#[test]
-fn ldr_imm_lit() {
-    let encodable = Box::new(LdrImmLit);
-    let matcher = single_pattern(encodable.as_ref());
-
-    let text = "label: LDR r0, label".into();
-    let hand = hand::parse(text);
-    let cir = hand.to_cir();
-    let pattern = pattern::from_cir(&cir);
-    let pair = matcher::match_pair(&matcher, &pattern).expect("pattern exists!");
-
-    let bits = encode_instruction(*pair.value(), &cir);
-
-    assert_eq!(bits, Word(0b1110_0101_0001_1111_0000_0000_0000_1000));
-}
+macros::test_encoding!(ldr_imm_lit of LdrImmLit; "label: LDR r0, label" => 0b1110_0101_0001_1111_0000_0000_0000_1000);

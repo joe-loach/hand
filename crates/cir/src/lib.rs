@@ -2,6 +2,8 @@
 
 pub mod structured;
 
+pub use structured::Parse as Structured;
+
 pub trait Convert {
     fn to_cir(&self) -> Vec<CIR>;
 }
@@ -42,6 +44,7 @@ impl Default for Shift {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(u8)]
 pub enum Condition {
     /// Equal
     EQ = 0b0000,
