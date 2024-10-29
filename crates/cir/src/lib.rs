@@ -1,11 +1,15 @@
 //! Common Immediate Representation
 
+#[cfg(feature = "derive")]
+extern crate structure_derive;
+
+pub mod structured;
+
 pub trait Convert {
     fn to_cir(&self) -> Vec<CIR>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, kinded::Kinded)]
-#[kinded(derive(PartialOrd, Ord, Hash))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CIR {
     Char(char),
     Register(u32),
@@ -41,6 +45,7 @@ impl Default for Shift {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(u8)]
 pub enum Condition {
     /// Equal
     EQ = 0b0000,

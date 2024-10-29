@@ -1,18 +1,63 @@
+use crate::Encodable;
+
+pub struct WordBuilder {
+    cursor: u8,
+    word: Word,
+}
+
+impl WordBuilder {
+    pub const fn new() -> Self {
+        Self {
+            cursor: 32,
+            word: Word::empty(),
+        }
+    }
+
+    pub fn finish(self) -> Word {
+        self.word
+    }
+
+    pub fn encode(mut self, enc: impl Encodable + std::fmt::Debug) -> Self {
+        let size = enc.size();
+        if size == 0 {
+            // takes up no bits, don't even bother encoding
+            return self;
+        }
+
+        let word = enc.encode();
+        self.cursor -= size;
+        self.word = self.word.with(word.get(), self.cursor);
+        self
+    }
+}
+
+impl Default for WordBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Word(pub(crate) u32);
 
 impl Word {
+    pub const fn empty() -> Self {
+        Word(0)
+    }
+
+    pub const fn base(bits: u32) -> Self {
+        Word(bits)
+    }
+
     pub const fn get(&self) -> u32 {
         self.0
     }
-}
 
-impl std::ops::Deref for Word {
-    type Target = u32;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    #[must_use = "Word is modified using `with`"]
+    pub const fn with(mut self, bits: u32, offset: u8) -> Self {
+        self.0 |= bits << offset;
+        self
     }
 }
 

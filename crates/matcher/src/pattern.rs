@@ -1,38 +1,40 @@
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Hash)]
+pub enum Pattern {
+    Char(char),
+    Register,
+    RegisterList,
+    Condition,
+    Shift,
+    Number,
+    Label,
+    OffsetAddress,
+    PreIndexAddress,
+    PostIndexAddress,
+    Bang
+}
+
 use cir::CIR;
-use trie_rs::map::TrieBuilder;
 
-use crate::Matcher;
+pub fn from_cir(cir: &[CIR]) -> Vec<Pattern> {
+    let mut res = Vec::new();
 
-pub trait Pattern {
-    fn pattern(&self) -> &[CIR];
-}
-
-pub struct Patterns<V> {
-    inner: TrieBuilder<cir::CIRKind, V>,
-}
-
-impl<V> Patterns<V> {
-    pub fn new() -> Self {
-        Self {
-            inner: TrieBuilder::new(),
-        }
+    for frag in cir {
+        let pattern = match frag {
+            CIR::Char(c) => Pattern::Char(*c),
+            CIR::Register(_) => Pattern::Register,
+            CIR::RegisterList(_) => Pattern::RegisterList,
+            CIR::Condition(_) => Pattern::Condition,
+            CIR::Shift(_) => Pattern::Shift,
+            CIR::Number(_) => Pattern::Number,
+            CIR::Label(_) => Pattern::Label,
+            CIR::OffsetAddress => Pattern::OffsetAddress,
+            CIR::PreIndexAddress => Pattern::PreIndexAddress,
+            CIR::PostIndexAddress => Pattern::PostIndexAddress,
+            CIR::Bang => Pattern::Bang,
+        };
+        
+        res.push(pattern);
     }
 
-    pub fn finish(self) -> Matcher<V> {
-        Matcher {
-            inner: self.inner.build(),
-        }
-    }
-
-    pub fn push(&mut self, mut pattern: V, cir: impl FnOnce(&mut V) -> &[CIR]) {
-        let cir = cir(&mut pattern);
-        self.inner
-            .push(cir.iter().map(CIR::kind).collect::<Vec<_>>(), pattern);
-    }
-}
-
-impl<V> Default for Patterns<V> {
-    fn default() -> Self {
-        Self::new()
-    }
+    res
 }

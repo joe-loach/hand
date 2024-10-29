@@ -3,6 +3,7 @@ mod adr;
 mod branch;
 mod cmp;
 
-use cir::CIR;
 use enc::*;
+
+use cir::structured::*;
 use matcher::Pattern;
