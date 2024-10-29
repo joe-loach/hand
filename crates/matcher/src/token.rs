@@ -6,20 +6,7 @@ pub trait PatternToken {
     const TOKEN: Pattern;
 }
 
-/*
-Register,
-RegisterList,
-Condition,
-Shift,
-Number,
-Label,
-OffsetAddress,
-PreIndexAddress,
-PostIndexAddress,
-Bang
-*/
-
-impl<T> PatternToken for Register<T> {
+impl<T: RegName> PatternToken for Register<T> {
     const TOKEN: Pattern = Pattern::Register;
 }
 
