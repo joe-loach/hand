@@ -10,7 +10,7 @@ pub enum Pattern {
     OffsetAddress,
     PreIndexAddress,
     PostIndexAddress,
-    Bang
+    Bang,
 }
 
 use cir::CIR;
@@ -32,7 +32,7 @@ pub fn from_cir(cir: &[CIR]) -> Vec<Pattern> {
             CIR::PostIndexAddress => Pattern::PostIndexAddress,
             CIR::Bang => Pattern::Bang,
         };
-        
+
         res.push(pattern);
     }
 

@@ -53,7 +53,9 @@ fn impl_pattern(
 ) -> Result<TokenStream, (Span, String)> {
     let module = crate::crate_name();
 
-    let mut tokens = fields.map(|f| pattern_token(&module, f)).collect::<Vec<_>>();
+    let mut tokens = fields
+        .map(|f| pattern_token(&module, f))
+        .collect::<Vec<_>>();
 
     if let Some(name_attr) = name_attr {
         for c in name_attr.chars().rev() {

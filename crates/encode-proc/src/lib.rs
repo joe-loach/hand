@@ -9,9 +9,7 @@ struct EncodeStream {
 
 impl Parse for EncodeStream {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let mut this = EncodeStream {
-            items: Vec::new(),
-        };
+        let mut this = EncodeStream { items: Vec::new() };
         for _ in 0..32 {
             if input.is_empty() {
                 break;
@@ -21,14 +19,13 @@ impl Parse for EncodeStream {
             if lookahead.peek(Ident::peek_any) {
                 let id: Ident = input.parse()?;
                 this.items.push(quote! { encode(#id) });
-
             } else if lookahead.peek(Token![|]) {
                 let _: Token![|] = input.parse()?;
                 // ignore this!
             } else if lookahead.peek(LitInt) {
                 let lit: LitInt = input.parse()?;
                 let value = lit.base10_parse::<u32>()?;
-    
+
                 if value > 1 {
                     abort!(lit, "Int literals must be a binary value, 0 or 1");
                 }
@@ -49,8 +46,7 @@ pub(crate) fn crate_name() -> proc_macro2::TokenStream {
     use quote::quote;
     use syn::Ident;
 
-    let found_crate =
-        proc_macro_crate::crate_name("enc").expect("enc is present in `Cargo.toml`");
+    let found_crate = proc_macro_crate::crate_name("enc").expect("enc is present in `Cargo.toml`");
 
     match found_crate {
         FoundCrate::Itself => quote!(crate),

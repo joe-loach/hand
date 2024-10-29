@@ -45,7 +45,7 @@ pub struct Matcher<V> {
     inner: Trie<Pattern, V>,
 }
 
-impl<V> Matcher< V> {
+impl<V> Matcher<V> {
     pub fn find_match(&self, pattern: &[Pattern]) -> Option<&V> {
         self.inner.exact_match(pattern)
     }

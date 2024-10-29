@@ -17,7 +17,9 @@ pub use encode_proc::encode;
 pub trait Encodable {
     fn encode(&self) -> Word;
 
-    fn size(&self) -> u8 { 32 }
+    fn size(&self) -> u8 {
+        32
+    }
 }
 
 impl<T: Encodable> Encodable for &T {
