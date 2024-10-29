@@ -2,7 +2,7 @@ use crate::*;
 
 /// Form PC-relative address adds an immediate value to the PC value to form a PC-relative address,
 /// and writes the result to the destination register.
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "ADR"]
 pub struct Adr(Condition, Register<D>, Label);
 

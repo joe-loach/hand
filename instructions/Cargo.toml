@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cir = { path = "../crates/cir" }
+cir = { path = "../crates/cir", features = ["derive"] }
 enc = { path = "../crates/enc", features = ["macros"] }
 hand = { path = "../crates/hand" }
 matcher = { path = "../crates/matcher", features = ["derive"] }

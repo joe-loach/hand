@@ -2,7 +2,7 @@ use crate::*;
 
 /// Compare (immediate) subtracts an immediate value from a register value.
 /// It updates the condition flags based on the result, and discards the result.
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "CMP"]
 pub struct CmpImm(Condition, Register<N>, Number<12>);
 

@@ -1,7 +1,7 @@
 use crate::*;
 
 /// Branch causes a branch to a target address.
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "B"]
 pub struct B(Condition, Label);
 

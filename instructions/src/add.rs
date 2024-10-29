@@ -8,13 +8,13 @@ pub enum Add {
 
 /// `Add (immediate)` adds an immediate value to a register value,
 /// and writes the result to the destination register.
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "ADD"]
 pub struct AddImm(Condition, Register<D>, Register<N>, Number<12>);
 
 /// `Add (register)`` adds a register value and an optionally-shifted register value,
 /// and writes the result to the destination register.
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "ADD"]
 pub struct AddReg(
     Condition,
@@ -28,7 +28,7 @@ pub struct AddReg(
 /// `Add (register-shifted register)` adds a register value and a register-shifted register value.
 /// It writes the result to the destination register,
 /// and can optionally update the condition flags based on the result.
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "ADD"]
 pub struct AddRegShiftReg(
     Condition,
