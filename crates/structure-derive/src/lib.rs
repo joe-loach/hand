@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro_error2::proc_macro_error;
 use quote::quote;
-use syn::{parse_macro_input, token, DeriveInput};
+use syn::{parse_macro_input, DeriveInput};
 
 pub(crate) fn crate_name() -> proc_macro2::TokenStream {
     use proc_macro2::Span;
@@ -9,8 +9,7 @@ pub(crate) fn crate_name() -> proc_macro2::TokenStream {
     use quote::quote;
     use syn::Ident;
 
-    let found_crate =
-        proc_macro_crate::crate_name("cir").expect("cir is present in `Cargo.toml`");
+    let found_crate = proc_macro_crate::crate_name("cir").expect("cir is present in `Cargo.toml`");
 
     match found_crate {
         FoundCrate::Itself => quote!(crate),
@@ -33,7 +32,9 @@ fn derive(input: DeriveInput) -> proc_macro2::TokenStream {
     let module = crate_name();
     let name = input.ident;
 
-    let syn::Data::Struct(data_struct) = input.data else { panic!("Only supports structs") };
+    let syn::Data::Struct(data_struct) = input.data else {
+        panic!("Only supports structs")
+    };
 
     let fields = data_struct.fields;
     let members = fields.members();
