@@ -2,7 +2,7 @@ use structured::*;
 
 use super::*;
 
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "LDR"]
 struct LdrImmPreIndex(
     Condition,
@@ -11,18 +11,6 @@ struct LdrImmPreIndex(
     Register<N>,
     Number<12>,
 );
-
-impl structured::Parse for LdrImmPreIndex {
-    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
-        Some(Self(
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-        ))
-    }
-}
 
 impl Encodable for LdrImmPreIndex {
     fn encode(&self) -> Word {
@@ -36,7 +24,7 @@ impl Encodable for LdrImmPreIndex {
 
 macros::test_encoding!(ldr_imm_preidx of LdrImmPreIndex; "LDR r0, [r1, #1]!" => 0b1110_0101_1011_0001_0000_0000_0000_0001);
 
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "LDR"]
 struct LdrRegPreIndex(
     Condition,
@@ -47,20 +35,6 @@ struct LdrRegPreIndex(
     Shift,
     Number<5>,
 );
-
-impl structured::Parse for LdrRegPreIndex {
-    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
-        Some(Self(
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-        ))
-    }
-}
 
 impl Encodable for LdrRegPreIndex {
     fn encode(&self) -> Word {
@@ -74,15 +48,9 @@ impl Encodable for LdrRegPreIndex {
 
 macros::test_encoding!(ldr_reg_preidx of LdrRegPreIndex; "LDR r0, [r1, r2, LSL #1]!" => 0b1110_0111_1011_0001_0000_0000_1000_0010);
 
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "LDR"]
 struct LdrImmLit(Condition, Register<T>, Label);
-
-impl structured::Parse for LdrImmLit {
-    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
-        Some(Self(buffer.parse()?, buffer.parse()?, buffer.parse()?))
-    }
-}
 
 impl Encodable for LdrImmLit {
     fn encode(&self) -> Word {

@@ -1,8 +1,9 @@
 //! Common Immediate Representation
 
-pub mod structured;
+#[cfg(feature = "derive")]
+extern crate structure_derive;
 
-pub use structured::Parse as Structured;
+pub mod structured;
 
 pub trait Convert {
     fn to_cir(&self) -> Vec<CIR>;

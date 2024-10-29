@@ -1,12 +1,15 @@
 mod buffer;
 
+#[cfg(feature = "derive")]
+pub use structure_derive::Structured;
+
 use std::marker::PhantomData;
 
 pub use buffer::Buffer;
 
 use crate::CIR;
 
-pub fn parse_from_args<T: Parse>(cir: &[CIR]) -> Option<T> {
+pub fn parse_from_args<T: Structured>(cir: &[CIR]) -> Option<T> {
     let mut buffer = Buffer::new(cir);
     // skip till arguments
     while let Some(CIR::Char(_)) = buffer.peek() {
@@ -29,7 +32,7 @@ macro_rules! match_buffer {
     }};
 }
 
-pub trait Parse {
+pub trait Structured {
     fn parse(buffer: &mut Buffer) -> Option<Self>
     where
         Self: Sized;
@@ -60,7 +63,7 @@ pub struct Address<T>(PhantomData<T>);
 #[derive(Debug)]
 pub struct Bang;
 
-impl Parse for Label {
+impl Structured for Label {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::Label(lbl) => {
             let signed = lbl.is_negative();
@@ -74,25 +77,25 @@ impl Parse for Label {
     }
 }
 
-impl Parse for Condition {
+impl Structured for Condition {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::Condition(cond) => Self(cond))
     }
 }
 
-impl Parse for RegisterList {
+impl Structured for RegisterList {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::RegisterList(mask) => Self(mask))
     }
 }
 
-impl<const BITS: u8> Parse for Number<BITS> {
+impl<const BITS: u8> Structured for Number<BITS> {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::Number(number) => Self(number & ((1 << BITS) - 1)))
     }
 }
 
-impl Parse for Shift {
+impl Structured for Shift {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::Shift(shift) => Self(shift))
     }
@@ -131,31 +134,31 @@ impl RegName for R {}
 impl RegName for S {}
 impl RegName for T {}
 
-impl<T: RegName> Parse for Register<T> {
+impl<T: RegName> Structured for Register<T> {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::Register(value) => Self(value, PhantomData))
     }
 }
 
-impl Parse for Address<Offset> {
+impl Structured for Address<Offset> {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::OffsetAddress => Self(PhantomData))
     }
 }
 
-impl Parse for Address<PreIndex> {
+impl Structured for Address<PreIndex> {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::PreIndexAddress => Self(PhantomData))
     }
 }
 
-impl Parse for Address<PostIndex> {
+impl Structured for Address<PostIndex> {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::PostIndexAddress => Self(PhantomData))
     }
 }
 
-impl Parse for Bang {
+impl Structured for Bang {
     fn parse(buffer: &mut Buffer) -> Option<Self> {
         match_buffer!(buffer: CIR::Bang => Self)
     }

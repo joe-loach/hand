@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 hand = { path = "../hand" }
 matcher = { path = "../matcher" }
-cir = { path = "../cir" }
+cir = { path = "../cir", features = ["derive"] }
 encode-proc = { path = "../encode-proc", optional = true }
 
 byteorder = "1.5.0"

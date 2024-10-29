@@ -2,15 +2,9 @@ use structured::*;
 
 use super::*;
 
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "LDM"]
 struct Ldm(Condition, Register<N>, RegisterList);
-
-impl structured::Parse for Ldm {
-    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
-        Some(Self(buffer.parse()?, buffer.parse()?, buffer.parse()?))
-    }
-}
 
 impl Encodable for Ldm {
     fn encode(&self) -> Word {

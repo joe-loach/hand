@@ -2,20 +2,9 @@ use cir::structured::*;
 
 use super::*;
 
-#[derive(Pattern)]
+#[derive(Pattern, Structured)]
 #[name = "ADD"]
 pub struct AddImm(Condition, Register<D>, Register<N>, Number<12>);
-
-impl structured::Parse for AddImm {
-    fn parse(buffer: &mut structured::Buffer) -> Option<Self> {
-        Some(Self(
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-            buffer.parse()?,
-        ))
-    }
-}
 
 impl Encodable for AddImm {
     fn encode(&self) -> Word {

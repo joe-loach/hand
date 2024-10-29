@@ -1,6 +1,6 @@
 use crate::CIR;
 
-use super::Parse;
+use super::Structured;
 
 pub struct Buffer<'a> {
     pos: usize,
@@ -27,7 +27,7 @@ impl<'a> Buffer<'a> {
         self.pos += 1;
     }
 
-    pub fn parse<T: Parse>(&mut self) -> Option<T> {
+    pub fn parse<T: Structured>(&mut self) -> Option<T> {
         T::parse(self)
     }
 }

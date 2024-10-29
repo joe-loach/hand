@@ -7,7 +7,7 @@ extern crate encode_proc;
 mod encoder;
 mod word;
 
-use cir::structured::{self, Offset, PostIndex, PreIndex, RegName};
+use cir::structured;
 pub use encoder::Encoder;
 pub use word::{Word, WordBuilder};
 
@@ -77,7 +77,7 @@ impl Encodable for structured::Condition {
     }
 }
 
-impl<T: RegName> Encodable for structured::Register<T> {
+impl<T: structured::RegName> Encodable for structured::Register<T> {
     fn encode(&self) -> Word {
         Word::base(self.0)
     }
@@ -123,7 +123,7 @@ impl Encodable for structured::Shift {
     }
 }
 
-impl Encodable for structured::Address<Offset> {
+impl Encodable for structured::Address<structured::Offset> {
     fn encode(&self) -> Word {
         Word::empty()
     }
@@ -133,7 +133,7 @@ impl Encodable for structured::Address<Offset> {
     }
 }
 
-impl Encodable for structured::Address<PreIndex> {
+impl Encodable for structured::Address<structured::PreIndex> {
     fn encode(&self) -> Word {
         Word::empty()
     }
@@ -143,7 +143,7 @@ impl Encodable for structured::Address<PreIndex> {
     }
 }
 
-impl Encodable for structured::Address<PostIndex> {
+impl Encodable for structured::Address<structured::PostIndex> {
     fn encode(&self) -> Word {
         Word::empty()
     }

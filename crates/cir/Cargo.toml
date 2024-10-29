@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+structure-derive = { path = "../structure-derive", optional = true }
+
+[features]
+derive = ["structure-derive"]
