@@ -42,7 +42,7 @@ pub struct AddRegShiftReg(
 impl Encodable for AddImm {
     fn encode(&self) -> Word {
         let AddImm(cond, rd, rn, imm12) = self;
-        let s = 1;
+        let s = 0;
         encode![cond | 0 0 1 0 | 1 0 0 | s | rn | rd | imm12]
     }
 }
@@ -50,7 +50,7 @@ impl Encodable for AddImm {
 impl Encodable for AddReg {
     fn encode(&self) -> Word {
         let AddReg(cond, rd, rn, rm, stype, imm5) = self;
-        let s = 1;
+        let s = 0;
         encode![cond | 0 0 0 0 | 1 0 0 | s | rn | rd | imm5 | stype | 0 | rm]
     }
 }
@@ -58,7 +58,7 @@ impl Encodable for AddReg {
 impl Encodable for AddRegShiftReg {
     fn encode(&self) -> Word {
         let AddRegShiftReg(cond, rd, rn, rm, stype, rs) = self;
-        let s = 1;
+        let s = 0;
         encode![cond | 0 0 0 0 | 1 0 0 | s | rn | rd | rs | 0 | stype | 1 | rm ]
     }
 }
