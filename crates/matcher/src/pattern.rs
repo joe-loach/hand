@@ -1,5 +1,6 @@
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Hash)]
 pub enum Pattern {
+    Instruction,
     Char(char),
     Register,
     RegisterList,
@@ -20,6 +21,7 @@ pub fn from_cir(cir: &[CIR]) -> Vec<Pattern> {
 
     for frag in cir {
         let pattern = match frag {
+            CIR::Instruction(_) => Pattern::Instruction,
             CIR::Char(c) => Pattern::Char(*c),
             CIR::Register(_) => Pattern::Register,
             CIR::RegisterList(_) => Pattern::RegisterList,

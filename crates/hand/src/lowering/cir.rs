@@ -25,11 +25,22 @@ impl<'a> HANDCursor<'a> {
     }
 
     pub(crate) fn process(&mut self) -> Vec<CIR> {
+        let mut instruction_count = 0;
         let mut cir = Vec::new();
 
         while let Some(frag) = self.bump() {
             let part = match frag {
-                Fragment::Instruction(range) | Fragment::Name(range) => {
+                Fragment::Instruction(range) => {
+                    cir.push(CIR::Instruction(instruction_count));
+                    instruction_count += 1;
+                    let text = self.resolve(range);
+                    assert!(text.is_ascii());
+                    for c in text.chars() {
+                        cir.push(CIR::Char(c));
+                    }
+                    continue;
+                }
+                Fragment::Name(range) => {
                     let text = self.resolve(range);
                     assert!(text.is_ascii());
                     for c in text.chars() {
