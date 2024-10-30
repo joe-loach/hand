@@ -24,7 +24,6 @@ pub fn assemble(text: Arc<str>) -> Vec<u8> {
     let mut encoder = Encoder::new_le();
 
     for (_inst, args) in instructions {
-        println!("{:?}", args);
         let pattern = pattern::from_cir(args);
         let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
 
