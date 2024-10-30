@@ -27,9 +27,10 @@ mod macros {
                 let text = $hand.into();
                 let hand = hand::parse(text);
                 let cir = hand.to_cir();
-                let pattern = pattern::from_cir(&cir);
+                let cir = &cir[1..];
+                let pattern = pattern::from_cir(cir);
                 let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
-                let bits = (pair.value())(&cir).encode();
+                let bits = (pair.value())(cir).encode();
                 assert_eq!(bits, Word($expected));
             }
         };
