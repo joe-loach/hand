@@ -17,7 +17,7 @@ Being devoid of multiple encodings and slightly more obscure instructions means 
 - [x] Syntax Errors
 - [x] Lowering
 - [x] HAND Matching
-- [ ] Encoding
+- [x] Encoding
 - [ ] Decoding
 - [ ] Virtual Machine
 - [ ] Documentation Book
