@@ -11,6 +11,7 @@ pub trait Convert {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CIR {
+    Instruction(u32),
     Char(char),
     Register(u32),
     RegisterList(u16),

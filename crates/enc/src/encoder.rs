@@ -13,6 +13,10 @@ impl<ORDER> Encoder<ORDER> {
     pub fn buffer(&self) -> &[u8] {
         &self.buffer
     }
+
+    pub fn finish(self) -> Vec<u8> {
+        self.buffer
+    }
 }
 
 impl Encoder<BE> {
