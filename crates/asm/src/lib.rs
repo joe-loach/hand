@@ -1,4 +1,8 @@
+mod error;
+
 use std::sync::Arc;
+
+pub use error::AsmError;
 
 use cir::{
     structured::{self, Structured},
@@ -10,32 +14,59 @@ use matcher::ConstPattern;
 
 type CB = fn(&[CIR]) -> Box<dyn Encodable>;
 
-pub fn assemble(text: Arc<str>) -> Vec<u8> {
+pub fn assemble(text: Arc<str>, matcher: &matcher::Matcher<CB>) -> Result<Vec<u8>, AsmError> {
     use cir::Convert;
     use matcher::pattern;
 
-    let matcher = build_matcher();
+    let hand = hand::parse(text).map_err(AsmError::Hand)?;
 
-    let hand = hand::parse(text);
     let cir = hand.to_cir();
 
     let instructions = instructions(&cir);
 
     let mut encoder = Encoder::new_le();
 
-    for (_inst, args) in instructions {
-        let pattern = pattern::from_cir(args);
-        let pair = matcher::match_pair(&matcher, &pattern).expect("Correct pattern");
+    for (_inst_id, args) in instructions {
+        let pattern = pattern::from_cir(args.cir());
+        let pair = matcher::match_pair(matcher, &pattern).ok_or_else(|| {
+            let instruction_name = args.name();
 
-        let bits = (pair.value())(args).encode();
+            AsmError::EncodingError {
+                instruction: instruction_name,
+            }
+        })?;
+
+        let cb = pair.value();
+        let instruction = cb(args.cir());
+        let bits = instruction.encode();
 
         encoder.push(bits);
     }
 
-    encoder.finish()
+    Ok(encoder.finish())
 }
 
-fn instructions(cir: &[CIR]) -> impl Iterator<Item = (&CIR, &[CIR])> {
+struct Instruction();
+struct Args<'a>(&'a [CIR]);
+
+impl<'a> Args<'a> {
+    pub fn cir(&self) -> &[CIR] {
+        self.0
+    }
+
+    pub fn name(&self) -> String {
+        self.0
+            .iter()
+            .take_while(|cir| matches!(cir, CIR::Char(_)))
+            .map(|cir| {
+                let CIR::Char(c) = cir else { unreachable!() };
+                *c
+            })
+            .collect::<String>()
+    }
+}
+
+fn instructions(cir: &[CIR]) -> impl Iterator<Item = (Instruction, Args)> {
     let mut curr = 0;
     cir.chunk_by({
         move |_, b| {
@@ -48,10 +79,21 @@ fn instructions(cir: &[CIR]) -> impl Iterator<Item = (&CIR, &[CIR])> {
             true
         }
     })
-    .filter_map(|inst| inst.split_first())
+    .map(|inst| {
+        inst.split_first()
+            .expect("group has an Instruction and Args")
+    })
+    .map(|(inst, args)| {
+        let CIR::Instruction(_id) = *inst else {
+            unreachable!()
+        };
+        let inst = Instruction();
+        let args = Args(args);
+        (inst, args)
+    })
 }
 
-fn build_matcher() -> matcher::Matcher<CB> {
+pub fn build_matcher() -> matcher::Matcher<CB> {
     fn add_pattern<T: ConstPattern + Encodable + Structured + 'static>(
         p: &mut matcher::Patterns<CB>,
     ) {

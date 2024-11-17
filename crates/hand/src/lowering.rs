@@ -4,7 +4,10 @@ use std::collections::HashMap;
 
 use parser::rowan::TextRange;
 
-use crate::ast::{self, AstToken};
+use crate::{
+    ast::{self, AstToken, Valid},
+    Error,
+};
 
 /// TODO: Use Handles to reduce size?
 /// A statement begins with [Label?, Instruction?, Condition ..args]
@@ -58,9 +61,8 @@ pub enum ShiftKind {
     RRX,
 }
 
-/// TODO: error handling
-pub fn lower(root: ast::Root) -> Vec<Fragment> {
-    let mut frags = Vec::new();
+pub fn lower(root: Valid, errors: &mut Vec<Error>) -> Vec<Fragment> {
+    let root = root.0;
 
     // TODO: this base of the address should be changable
     let mut address = 0x0_u32;
@@ -70,14 +72,18 @@ pub fn lower(root: ast::Root) -> Vec<Fragment> {
             let id = label.name().ident().unwrap();
             let text = id.syntax().text().to_string();
             let old = label_addresses.insert(text, address);
-            // TODO: validate the ast against this
-            assert!(old.is_none(), "Label defined twice");
+
+            if old.is_some() {
+                errors.push(Error::MultipleSameLabel);
+            }
         }
         // instructions are 4 bytes
         address += 4;
     }
 
+    let mut frags = Vec::new();
     let mut address = 0x0_u32;
+
     for stmt in root.statements() {
         if let Some(body) = stmt.instruction() {
             let name = body.name();
@@ -121,7 +127,7 @@ pub fn lower(root: ast::Root) -> Vec<Fragment> {
                 }
             }
         } else {
-            panic!("Statement has no body");
+            errors.push(Error::NoBodyStatement);
         }
         address += 4;
     }

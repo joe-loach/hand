@@ -25,7 +25,7 @@ mod macros {
                     Box::new(cir::structured::parse_from_args::<$ty>(&cir).unwrap())
                 });
                 let text = $hand.into();
-                let hand = hand::parse(text);
+                let hand = hand::parse(text).unwrap();
                 let cir = hand.to_cir();
                 let cir = &cir[1..];
                 let pattern = pattern::from_cir(cir);

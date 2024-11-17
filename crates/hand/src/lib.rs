@@ -1,4 +1,5 @@
 mod ast;
+mod error;
 mod grammar;
 mod lexer;
 mod lowering;
@@ -7,9 +8,11 @@ mod syntax;
 use std::sync::Arc;
 
 use ast::AstNode as _;
-pub use lowering::{AddressKind, Fragment};
 use parser::rowan;
 use syntax::SyntaxKind;
+
+pub use error::Error;
+pub use lowering::{AddressKind, Fragment};
 
 #[test]
 fn it_works() {
@@ -29,7 +32,7 @@ fn it_works() {
                 LDR r2, [r3], r4\n\
                 HLT";
     let text = Arc::<str>::from(text);
-    let frags = parse(text);
+    let frags = parse(text).unwrap();
     dbg!(frags);
 }
 
@@ -37,7 +40,6 @@ fn it_works() {
 pub struct ParseResult {
     text: Arc<str>,
     fragments: Vec<Fragment>,
-    // errors: Vec<Error>?
 }
 
 impl ParseResult {
@@ -57,25 +59,20 @@ impl ParseResult {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum HAND {}
 
-pub fn parse(text: Arc<str>) -> ParseResult {
+pub fn parse(text: Arc<str>) -> Result<ParseResult, Vec<Error>> {
     let tree = crate::grammar::parse(text.clone());
     let root = crate::ast::Root::cast(tree).expect("grammar starts at root");
 
-    // TODO: error handling
-    // let mut errors = Vec::new();
-    // crate::ast::validate(root.clone(), &mut errors);
+    let mut errors = Vec::new();
 
-    let fragments = lowering::lower(root /*, &mut errors*/);
+    let valid = crate::ast::validate(root, &mut errors);
+    let fragments = lowering::lower(valid, &mut errors);
 
-    // TODO: error handling
-    // if !errors.is_empty() {
-    //     return Err(Errors {
-    //         src: text.clone(),
-    //         inner: errors,
-    //     });
-    // }
+    if !errors.is_empty() {
+        return Err(errors);
+    }
 
-    ParseResult { text, fragments }
+    Ok(ParseResult { text, fragments })
 }
 
 impl rowan::Language for HAND {

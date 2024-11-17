@@ -10,6 +10,8 @@ use crate::{
     syntax::SyntaxKind,
 };
 
+pub use validate::{validate, Valid};
+
 pub trait AstNode: Sized {
     fn castable(kind: SyntaxKind) -> bool;
     fn cast(node: SyntaxNode) -> Option<Self>;

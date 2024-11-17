@@ -7,3 +7,6 @@ edition = "2021"
 lexer = { path = "../lexer" }
 parser = { path = "../parser" }
 cir = { path = "../cir" }
+
+thiserror = "1.0"
+codespan-reporting = { version = "0.11" }
